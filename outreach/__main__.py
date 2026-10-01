@@ -13,7 +13,7 @@ from .llm import LLMError, describe
 from .models import STATUS_LABELS, Status, load_campaign
 from .pipeline import build_services, funnel, reset_data, run_pipeline
 from .notify import make_notifier
-from .sending import make_sender, send_approved
+from .sending import SendError, make_sender, send_approved
 
 
 def print_funnel(conn, campaign_id: str) -> None:
@@ -74,7 +74,12 @@ def main(argv: list[str] | None = None) -> int:
         print_funnel(conn, campaign.id)
 
     elif args.command == "send":
-        summary = send_approved(conn, campaign, make_sender(settings), settings.allowed_recipient_suffixes,
+        try:
+            sender = make_sender(settings)
+        except SendError as exc:
+            print(f"Can't send: {exc}")
+            return 1
+        summary = send_approved(conn, campaign, sender, settings.allowed_recipient_suffixes,
                                 notifier=make_notifier(settings))
         print(summary.text())
 

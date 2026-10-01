@@ -7,9 +7,11 @@ import sqlite3
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from email.message import EmailMessage
-from email.utils import formataddr, formatdate, make_msgid
+from email.utils import formataddr, formatdate, make_msgid, parseaddr
 from pathlib import Path
 from typing import Protocol
+
+import httpx
 
 from .config import Settings
 from .db import audit, get_lead, now_iso, transaction, update_lead
@@ -22,6 +24,10 @@ class EmailSender(Protocol):
     name: str
 
     def send(self, message: EmailMessage) -> None: ...
+
+
+class SendError(Exception):
+    """A send that didn't happen, with a reason a person can act on."""
 
 
 class OutboxSender:
@@ -52,10 +58,71 @@ class SmtpSender:
             smtp.send_message(message)
 
 
+class ResendSender:
+    """Resend's email API. Until you add your own domain there, it only delivers to your own address."""
+
+    name = "Resend"
+    url = "https://api.resend.com/emails"
+
+    def __init__(self, api_key: str, from_address: str, client: httpx.Client | None = None):
+        self.api_key, self.from_address, self.client = api_key, from_address, client
+
+    def send(self, message: EmailMessage) -> None:
+        # Keep the campaign's sender name, but send from an address Resend lets us use.
+        name = parseaddr(str(message["From"]))[0]
+        payload = {
+            "from": formataddr((name, self.from_address)),
+            "to": [str(message["To"])],
+            "subject": str(message["Subject"]),
+            "text": message.get_content(),
+            "headers": {"List-Unsubscribe": str(message["List-Unsubscribe"])},
+        }
+        post = self.client.post if self.client else httpx.post
+        try:
+            response = post(self.url, json=payload, headers={"Authorization": f"Bearer {self.api_key}"}, timeout=10)
+        except httpx.HTTPError as exc:
+            raise SendError(f"couldn't reach Resend: {exc}") from exc
+        if response.status_code >= 400:
+            try:
+                reason = response.json().get("message") or response.text
+            except ValueError:
+                reason = response.text
+            raise SendError(f"Resend refused it ({response.status_code}): {reason}")
+
+
+class InboxRedirect:
+    """Sends every email to one inbox instead, with a line at the top saying who it was meant for.
+
+    This is how the prototype sends real email without ever reaching a doctor.
+    """
+
+    def __init__(self, sender: EmailSender, inbox: str):
+        self.sender, self.inbox = sender, inbox
+        self.name = f"{sender.name}, to the demo inbox"
+
+    def send(self, message: EmailMessage) -> None:
+        meant_for = message["To"]
+        body = message.get_content()
+        message.replace_header("To", self.inbox)
+        message["X-Original-To"] = meant_for
+        message.set_content(f"Demo copy. In the real campaign, this email goes to {meant_for}.\n\n{body}")
+        self.sender.send(message)
+
+
 def make_sender(settings: Settings) -> EmailSender:
-    if settings.email_sender == "smtp":
-        return SmtpSender(settings.smtp_host, settings.smtp_port)
-    return OutboxSender(settings.outbox_dir)
+    if settings.email_sender == "resend":
+        if not settings.resend_api_key:
+            raise SendError("Resend isn't set up yet. Paste your key after RESEND_API_KEY= in .env, "
+                            "then restart the server.")
+        if not settings.demo_inbox:
+            raise SendError("Set DEMO_INBOX in .env to the address you signed up to Resend with. "
+                            "Its test mode only delivers there.")
+        sender: EmailSender = ResendSender(settings.resend_api_key, settings.resend_from)
+    elif settings.email_sender == "smtp":
+        sender = SmtpSender(settings.smtp_host, settings.smtp_port)
+    else:
+        sender = OutboxSender(settings.outbox_dir)
+    return InboxRedirect(sender, settings.demo_inbox) if settings.demo_inbox else sender
 
 
 def build_message(campaign: Campaign, lead: dict, draft: dict) -> EmailMessage:
@@ -129,7 +196,8 @@ def send_approved(
             summary.deferred += 1
             continue
 
-        # 1. Demo safety: never email a real domain from this prototype.
+        # 1. Demo safety: never email a real domain from this prototype. With a demo inbox set, the
+        #    email itself goes to that inbox instead (InboxRedirect).
         if not lead["email"].endswith(allowed_suffixes):
             _block(conn, lead["id"], f"Safety guard: this demo only sends to {', '.join(allowed_suffixes)} addresses.",
                    summary, actor)
@@ -160,7 +228,7 @@ def send_approved(
         message = build_message(campaign, lead, draft)
         try:
             sender.send(message)
-        except (OSError, smtplib.SMTPException) as exc:
+        except (OSError, smtplib.SMTPException, SendError) as exc:
             with transaction(conn):
                 conn.execute("UPDATE outreach_log SET status = 'failed', error = ? WHERE idempotency_key = ?",
                              (str(exc), key))

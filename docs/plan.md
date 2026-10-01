@@ -23,7 +23,7 @@ A messy research spreadsheet goes in. Plain rules filter it step by step, an AI 
 2. Click **Run pipeline**. The "Your workflow" boxes fill in: 27 rows, 24 unique doctors, 19 qualified, 18 with an email, 14 verified, 11 not contacted before, then drafts. Click any box to see who stopped there and why.
 3. Open **Review**. Read a draft next to the facts it was written from. Edit one, approve a few, reject one.
 4. Point at the doctor whose profile contained a hidden "ignore your instructions" line. The checks blocked that draft before it reached you.
-5. Click **Send approved**. Emails land in a local outbox folder, never a real inbox.
+5. Click **Send approved**. On the laptop, each email lands in your own inbox, with a line saying which doctor it was for. It never reaches a doctor. Online, emails are saved to a folder instead.
 6. Open **Log**, then export the final list as a CSV for the team.
 
 ## 4. The pipeline, step by step
@@ -99,7 +99,7 @@ Each step is a small function that returns "passed", or "stopped, and here is wh
   1. **Demo safety:** it only sends to `.example` and `.test` addresses.
   2. **Fresh check:** it looks at the opt-out list and history again, in case someone opted out after approval.
   3. **Claims the send first:** it writes a "sending" row with a unique key (campaign + doctor). If the key already exists, the email is never sent twice.
-  4. **Sends:** it writes the email to the `outbox/` folder as an `.eml` file, or uses SMTP (for example Mailpit) if configured.
+  4. **Sends:** it writes the email to the `outbox/` folder as an `.eml` file, or sends it through SMTP or Resend if configured. With a demo inbox set, every email goes there instead of the doctor's address.
   5. **Daily limit:** sending stops at the campaign's daily cap.
 - **If it fails:** marked "send failed" and retried next time. If the program crashed mid-send, the row stays "sending" and a person checks it. Nothing is ever resent automatically.
 - **Interview line:** "I'd rather miss an email than send a doctor the same one twice, so the send is claimed before it happens."
@@ -148,7 +148,7 @@ Small tidy-ups are fixed by code and logged instead of retried. For example, the
  [review page] ---> approve / edit / reject / regenerate           (a person)
       |
       v
- [send] ---> outbox/*.eml or SMTP ---> outreach_log  <--- read by the history check
+ [send] ---> outbox, SMTP or Resend ---> outreach_log  <--- read by the history check
       |
       v
  audit_log (every decision)            final_list.csv (for the team)
@@ -214,7 +214,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 
 ### Why it's built this way (for the IT lead)
 
-- **Almost no JavaScript.** Filters and the theme switch are plain links and forms, folding sections are `<details>`, tooltips are `title`. The one script copies text to the clipboard on the Google Sheets page, and that page still works without it.
+- **Almost no JavaScript.** Filters and the theme switch are plain links and forms, folding sections are `<details>`, and each small "i" opens its explanation with the HTML `popover` attribute. The one script copies text to the clipboard on the Google Sheets page, and that page still works without it.
 - **No page reloads by itself except the Run page,** so a half-typed search or an open panel is never lost.
 - **Downloads match the screen:** the CSV and the Google Sheets copy use the same filter function as the Doctors page.
 - **Safe with web data.** Templates escape everything; the highlighter escapes each piece before adding its own tags; a test proves a hidden `<img onerror=...>` comes out as plain text.

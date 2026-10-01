@@ -1,15 +1,22 @@
+import email
+import json
 import smtplib
+from dataclasses import replace
+from email.policy import default as email_policy
+from email.utils import formataddr
 
+import httpx
 import pytest
 
 from outreach.db import get_lead
 from outreach.pipeline import run_pipeline
 from outreach.review import ReviewError, approve, regenerate, reject
-from outreach.sending import OutboxSender, send_approved
+from outreach.sending import InboxRedirect, OutboxSender, ResendSender, SendError, make_sender, send_approved
 
 from .conftest import SEED, TODAY
 
 SAFE = (".example", ".test")
+INBOX = "lat@inbox.test"  # a made-up inbox: no test ever sends real email
 
 
 @pytest.fixture
@@ -159,3 +166,63 @@ def test_a_send_stuck_in_progress_is_never_resent(drafted, campaign, settings):
     summary = send_approved(drafted, campaign, OutboxSender(settings.outbox_dir), SAFE, today=TODAY)
     assert summary.sent == 0
     assert not list(settings.outbox_dir.glob("*.eml"))
+
+
+# --- real email to your own inbox -------------------------------------------------
+
+def fake_resend(status: int, body: dict, seen: list) -> ResendSender:
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(status, json=body)
+
+    return ResendSender("re_test_key", "onboarding@resend.dev", client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+def test_the_demo_inbox_gets_the_email_and_the_log_keeps_the_doctor(drafted, campaign, settings):
+    approve(drafted, pending_draft(drafted, "Priya Raman")["id"], "Lat", campaign)
+    sender = InboxRedirect(OutboxSender(settings.outbox_dir), INBOX)
+    assert send_approved(drafted, campaign, sender, SAFE, today=TODAY).sent == 1
+
+    saved = email.message_from_bytes(next(settings.outbox_dir.glob("*.eml")).read_bytes(), policy=email_policy)
+    assert saved["To"] == INBOX
+    assert saved["X-Original-To"] == "Priya Raman <priya.raman@northbridge.nhs.example>"
+    assert saved.get_content().startswith(
+        "Demo copy. In the real campaign, this email goes to Priya Raman <priya.raman@northbridge.nhs.example>.")
+    # The history check still knows which doctor was contacted.
+    logged = drafted.execute("SELECT email FROM outreach_log WHERE lead_id IS NOT NULL").fetchone()[0]
+    assert logged == "priya.raman@northbridge.nhs.example"
+
+
+def test_resend_gets_the_email_with_the_campaign_name_and_the_key(drafted, campaign):
+    seen = []
+    approve(drafted, pending_draft(drafted, "Priya Raman")["id"], "Lat", campaign)
+    sender = InboxRedirect(fake_resend(200, {"id": "test-id"}, seen), INBOX)
+    assert send_approved(drafted, campaign, sender, SAFE, today=TODAY).sent == 1
+
+    request = seen[0]
+    payload = json.loads(request.content)
+    assert str(request.url) == "https://api.resend.com/emails"
+    assert request.headers["Authorization"] == "Bearer re_test_key"
+    assert payload["from"] == formataddr((campaign.sender.name, "onboarding@resend.dev"))
+    assert payload["to"] == [INBOX]
+    assert payload["text"].startswith("Demo copy. In the real campaign, this email goes to Priya Raman")
+
+
+def test_a_refusal_from_resend_is_a_failed_send_with_its_reason(drafted, campaign):
+    draft = pending_draft(drafted, "Priya Raman")
+    approve(drafted, draft["id"], "Lat", campaign)
+    refusal = {"name": "validation_error", "message": "You can only send testing emails to your own email address."}
+    summary = send_approved(drafted, campaign, InboxRedirect(fake_resend(403, refusal, []), INBOX), SAFE, today=TODAY)
+
+    lead = get_lead(drafted, draft["lead_id"])
+    assert summary.failed == 1 and lead["status"] == "SEND_FAILED"
+    assert "Resend refused it (403): You can only send testing emails" in lead["reason"]
+
+
+def test_resend_needs_a_key_and_an_inbox(settings):
+    with pytest.raises(SendError, match="RESEND_API_KEY"):
+        make_sender(replace(settings, email_sender="resend"))
+    with pytest.raises(SendError, match="DEMO_INBOX"):
+        make_sender(replace(settings, email_sender="resend", resend_api_key="re_test_key"))
+    ready = make_sender(replace(settings, email_sender="resend", resend_api_key="re_test_key", demo_inbox=INBOX))
+    assert ready.name == "Resend, to the demo inbox"

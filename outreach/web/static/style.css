@@ -70,15 +70,22 @@ code { font-size: 0.9em; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .skip { position: absolute; left: -999px; }
 .skip:focus { left: 16px; top: 8px; background: var(--card); padding: 8px 12px; z-index: 10; }
-abbr[title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
 mark { background: var(--mark); color: inherit; padding: 0 2px; border-radius: 3px; }
 mark.danger { background: var(--bad-soft); color: var(--bad); font-weight: 600; }
 
 /* Header */
 .top { background: var(--card); border-bottom: 1px solid var(--line); }
 .top-inner { max-width: 1200px; margin: 0 auto; padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; }
-.brand { display: flex; flex-direction: column; line-height: 1.25; color: var(--text); text-decoration: none; }
-.brand span { color: var(--muted); font-size: 0.85rem; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.25; }
+.brand small { color: var(--muted); font-size: 0.85rem; }
+/* Our own mark: an approved email. Its colours follow the light or dark theme. */
+.logo { width: 34px; height: 34px; flex: none; }
+.logo-bg { fill: var(--accent); }
+.logo-line, .logo-tick { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.logo-line { stroke: var(--card); }
+.logo-badge { fill: var(--card); stroke: var(--accent); stroke-width: 1.5; }
+.logo-tick { stroke: var(--accent); }
 .top nav { display: flex; gap: 4px; }
 .top nav a { padding: 8px 12px; border-radius: 6px; color: var(--text); font-weight: 600; text-decoration: none; white-space: nowrap; }
 .top nav a:hover { background: var(--muted-soft); }
@@ -115,6 +122,13 @@ button.primary:hover, .button.primary:hover { background: var(--accent-hover); c
 button.danger { color: var(--bad); }
 button.quiet { font-weight: 400; color: var(--muted); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
+/* A small "i" that opens an explanation box (the HTML popover attribute: no JavaScript). */
+button.info { display: inline-grid; place-items: center; width: 1.3em; height: 1.3em; margin: 0 0 0 0.35em; padding: 0; border: 1px solid var(--accent); border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: italic 700 0.8em/1 Georgia, "Times New Roman", serif; vertical-align: 0.1em; box-shadow: none; }
+button.info:hover { background: var(--accent); color: var(--card); }
+button.step-info { display: none; } /* wide screens show the explanation under each step instead */
+.info-pop { max-width: min(26rem, calc(100vw - 32px)); margin: auto; padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--card); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
+.info-pop p { margin: 0 0 10px; }
+.info-pop::backdrop { background: rgba(0, 0, 0, 0.3); }
 input, select, textarea { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-radius: 6px; padding: 8px 10px; }
 label { font-weight: 600; font-size: 0.9rem; }
 .field-hint { display: block; font-weight: 400; font-size: 0.86rem; color: var(--muted); margin: 1px 0 2px; overflow-wrap: anywhere; }
@@ -145,6 +159,7 @@ label { font-weight: 600; font-size: 0.9rem; }
 .todo li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
 .todo li:first-child { border-top: 0; padding-top: 0; }
 .todo form { margin: 0; }
+.todo li > .button, .todo li > form > button { min-width: 7.5rem; text-align: center; } /* every to-do button the same size */
 .todo-count { font-size: 1.6rem; font-weight: 700; text-align: center; color: var(--accent); }
 .todo-text strong { display: block; }
 .todo-text span { display: block; color: var(--muted); font-size: 0.93rem; }
@@ -336,7 +351,7 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
 }
 @media (max-width: 760px) {
   .top-inner { padding: 10px 16px; }
-  .brand span { display: none; }
+  .brand small { display: none; }
   .phone-link { display: none; }
   .top nav { order: 3; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .top nav a { text-align: center; padding: 8px 6px; border: 1px solid var(--line); }
@@ -349,6 +364,7 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
   .task-num { width: 26px; height: 26px; font-size: 0.85rem; }
   .task-summary { font-size: 1.05rem; }
   .task .hint { display: none; }
+  button.step-info { display: inline-grid; }
   .callout .button { width: 100%; text-align: center; }
   .search { display: grid; grid-template-columns: 1fr 1fr; }
   .search .grow, .search button, .search .clear { grid-column: 1 / -1; }

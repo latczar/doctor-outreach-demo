@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Outreach{% endblock %} | Doctor outreach</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
   {% block head %}{% endblock %}
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -11,7 +12,16 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="top">
     <div class="top-inner">
-      <a class="brand" href="/"><strong>Doctor outreach</strong><span>{{ campaign.name }}</span></a>
+      <a class="brand" href="/">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect class="logo-bg" width="32" height="32" rx="8"/>
+          <rect class="logo-line" x="5" y="8" width="18" height="13" rx="2"/>
+          <path class="logo-line" d="M6 9.5l8 6 8-6"/>
+          <circle class="logo-badge" cx="23.5" cy="22.5" r="6"/>
+          <path class="logo-tick" d="M20.8 22.6l1.9 1.9 3.6-3.8"/>
+        </svg>
+        <span class="brand-text"><strong>Doctor outreach</strong><small>{{ campaign.name }}</small></span>
+      </a>
       <nav aria-label="Main">
         {% set waiting = counts.get('PENDING_APPROVAL', 0) + counts.get('DRAFT_FAILED', 0) %}
         <a href="/" class="{{ 'on' if active == 'overview' }}">Overview</a>
@@ -44,8 +54,16 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="foot">
-    <p>Prototype with made-up data. Every address uses the reserved <code>.example</code> domain, and the send step refuses anything else.</p>
-    <p>Drafting: {{ model }} · Sending to: {{ 'the outbox folder' if sender == 'outbox' else 'SMTP' }} <span class="wide-only">· <a href="/phone?path={{ here | urlencode }}">See this page at phone size</a></span></p>
+    <p>Prototype with made-up data. Every doctor's address uses the reserved <code>.example</code> domain, and the send step refuses anything else.{% if demo_inbox %} Emails go to the demo inbox instead, with a line saying who each one was for.{% endif %}</p>
+    <p>Drafting: {{ model }} · Sending: {{ sending }} <span class="wide-only">· <a href="/phone?path={{ here | urlencode }}">See this page at phone size</a></span></p>
   </footer>
+  {# The explanations behind each small "i". Each opens on top of the page and closes on a click outside it. #}
+  {% for term, meaning in glossary.items() %}
+  <div class="info-pop" id="{{ term_id(term) }}" popover>
+    <p><strong>{{ term[:1] | upper }}{{ term[1:] }}</strong></p>
+    <p>{{ meaning }}</p>
+    <button type="button" popovertarget="{{ term_id(term) }}" popovertargetaction="hide">Close</button>
+  </div>
+  {% endfor %}
 </body>
 </html>

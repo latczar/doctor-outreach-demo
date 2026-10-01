@@ -2,18 +2,29 @@
 {% set active = "overview" %}
 {% block title %}Overview{% endblock %}
 
+{% macro how_box(key, label, how) %}
+<div class="info-pop" id="how-{{ key }}" popover>
+  <p><strong>{{ label }}</strong></p>
+  <p>{{ how }}</p>
+  <button type="button" popovertarget="how-{{ key }}" popovertargetaction="hide">Close</button>
+</div>
+{% endmacro %}
+
+{% macro how_button(key) %}<button type="button" class="info step-info" popovertarget="how-{{ key }}" aria-label="How this step decides">i</button>{% endmacro %}
+
 {% macro step_row(step, number) %}
 {% set status, status_tone = step_status(step) %}
 <li class="task">
   <span class="task-num" aria-hidden="true">{{ number }}</span>
   <div class="task-body">
     <div class="task-head">
-      <h3>{{ step.label }}</h3>
+      <h3>{{ step.label }}{{ how_button(step.key) }}</h3>
       <span class="tag {{ status_tone }}">{{ status }}</span>
     </div>
     <p class="task-summary">{{ step.summary }}</p>
     {% if step.of %}<div class="meter" aria-hidden="true"><span style="width: {{ (100 * step.count / step.of) | round | int }}%"></span></div>{% endif %}
     <p class="hint">{{ step.how | explain }}</p>
+    {{ how_box(step.key, step.label, step.how) }}
     {% if step.waiting or step.stopped %}
       <p class="task-outcomes">
         {% for code, n in step.waiting.items() %}<span class="tag waiting">{{ phrase(code, n) }}</span>{% endfor %}
@@ -67,7 +78,7 @@
         {% if to_review %}
           <li><span class="todo-count">{{ to_review }}</span>
             <span class="todo-text"><strong>Review {{ to_review }} email{{ 's' if to_review != 1 }}</strong><span>Drafted by the system. Approve, edit or reject each one.</span></span>
-            <a class="button primary" href="/review">Review</a></li>
+            <a class="button" href="/review">Review</a></li>
         {% endif %}
         {% if to_fix %}
           <li><span class="todo-count warn">{{ to_fix }}</span>
@@ -82,7 +93,7 @@
         {% if to_send %}
           <li><span class="todo-count">{{ to_send }}</span>
             <span class="todo-text"><strong>Send {{ to_send }} approved email{{ 's' if to_send != 1 }}</strong><span>Each one goes out once and is logged.</span></span>
-            <form method="post" action="/send"><button class="primary">Send</button></form></li>
+            <form method="post" action="/send"><button>Send</button></form></li>
         {% endif %}
       </ul>
     {% else %}
@@ -109,9 +120,10 @@
       <li class="task">
         <span class="task-num" aria-hidden="true">1</span>
         <div class="task-body">
-          <div class="task-head"><h3>{{ intake.label }}</h3><span class="tag good">Done</span></div>
+          <div class="task-head"><h3>{{ intake.label }}{{ how_button("intake") }}</h3><span class="tag good">Done</span></div>
           <p class="task-summary">{{ view.rows }} rows in the research list became {{ view.unique }} doctors</p>
           <p class="hint">{{ intake.how | explain }}</p>
+          {{ how_box("intake", intake.label, intake.how) }}
           {% if view.duplicates %}<p class="task-outcomes"><span class="tag muted">{{ phrase('DUPLICATE', view.duplicates) }}</span> <a href="/doctors?step=dedupe">See who, and why</a></p>{% endif %}
         </div>
       </li>

@@ -57,9 +57,9 @@ def test_headline_is_the_first_sentence():
     assert headline("Contacted 42 days ago. We wait 180 days.") == "Contacted 42 days ago."
 
 
-def test_terms_get_a_hover_explanation_and_text_is_escaped():
+def test_terms_get_an_i_that_opens_the_explanation_and_text_is_escaped():
     html = str(explain_terms("caldervalley accepts every address (catch-all) <script>"))
-    assert '<abbr title="A domain that accepts mail for any address' in html
+    assert 'catch-all<button type="button" class="info" popovertarget="term-catch-all"' in html
     assert "<script>" not in html and "&lt;script&gt;" in html
 
 
@@ -150,6 +150,9 @@ def test_overview_reads_as_x_of_y_with_a_to_do_list(client):
     assert "19 of 24 doctors fit the campaign" in page
     assert "Final list: 11 doctors cleared to contact" in page
     assert "Review 10 emails" in page and "What needs you" in page
+    # Every page carries the explanation boxes the small "i" buttons open, and our own logo.
+    assert 'id="term-catch-all" popover' in page and 'popovertarget="how-email_verified"' in page
+    assert 'href="/static/logo.svg"' in page
 
 
 def test_doctor_search_and_filters(client):

@@ -37,7 +37,8 @@ The same app runs on Vercel's free tier as an online prototype, so others can cl
   - files live in `/tmp`, the only writable place;
   - a fresh server starts from `data/demo-snapshot.db`, a snapshot of a real run with the local model, so the first drafts are real AI output;
   - new drafts use the template writer, because the local model isn't online;
-  - runs finish in one go, because an online server can pause between requests.
+  - runs finish in one go, because an online server can pause between requests;
+  - real email is switched off: sending always saves to the outbox, so visitors can't send anything.
 - Data resets when the server restarts, and Reset demo goes back to the snapshot rather than an empty list. A banner says so.
 
 Live copy: https://doctor-outreach.vercel.app (pushes to `main` redeploy it). The screens say "the system" rather than AI.
@@ -79,13 +80,17 @@ All in `.env` (see `.env.example`):
 | Setting | Options |
 |---|---|
 | `LLM_PROVIDER` | `fake` (template, no AI), `ollama` (local and free), `anthropic` (Claude: `pip install anthropic` and set `ANTHROPIC_API_KEY`) |
-| `EMAIL_SENDER` | `outbox` writes `.eml` files to `outbox/`. `smtp` sends to `SMTP_HOST:SMTP_PORT`, for example Mailpit |
+| `EMAIL_SENDER` | `outbox` writes `.eml` files to `outbox/`. `smtp` sends to `SMTP_HOST:SMTP_PORT`, for example Mailpit. `resend` sends real email through Resend (see below) |
+| `DEMO_INBOX` | Optional. Every email goes here instead of the doctor's made-up address, with a line at the top saying who it was for |
+| `RESEND_API_KEY` | Your Resend key, for `EMAIL_SENDER=resend`. It stays in `.env`, which never goes to GitHub |
 | `ALLOWED_RECIPIENT_SUFFIXES` | The send step refuses any other address. Defaults to `.example,.test` |
 | `ALERT_WEBHOOK_URL` | Optional. Urgent alerts are posted here as JSON, so n8n or Zapier can forward them to WhatsApp, Slack or Teams. Without it they go to `outbox/alerts.log` |
 
 Campaign rules live in [config/campaign.json](config/campaign.json): target countries, specialties and grades, the offer facts the model may use, the sender, the 180-day gap between contacts, the daily send cap and the number of draft attempts.
 
 To watch real emails arrive in a web inbox, run Mailpit (`docker run -p 8025:8025 -p 1025:1025 axllent/mailpit`), set `EMAIL_SENDER=smtp`, and open http://localhost:8025.
+
+To get real emails on your phone, sign up to [Resend](https://resend.com) for free with your own address and create a key with sending access. Then set `EMAIL_SENDER=resend`, `DEMO_INBOX` (that address) and `RESEND_API_KEY` in `.env`. Every approved email then lands in your inbox, starting with a line that says which doctor it was for. Two things stop it reaching a doctor: the app redirects every email to your inbox, and Resend's test mode only delivers to the address you signed up with. The online copy ignores these settings.
 
 ## How it's built
 
@@ -105,8 +110,8 @@ outreach/
   pipeline.py            runs the steps in order and works out the funnel
   llm/                   fake, ollama, anthropic behind one small interface
   web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, phone view
-    present.py           plain English for the screens: the three lists, trackers, highlights, tooltips
-tests/                   126 tests, one file per step plus end-to-end, screen, alert, decision and web tests
+    present.py           plain English for the screens: the three lists, trackers, highlights, the small "i" explanations
+tests/                   132 tests, one file per step plus end-to-end, screen, alert, decision and web tests
 ```
 
 Python, FastAPI, SQLite and server-rendered pages, styled with patterns from the GOV.UK Design System in our own look. No LangChain, no agents, no queue: each step is a function you can point at and test.

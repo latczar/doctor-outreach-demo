@@ -27,10 +27,11 @@ from ..notify import make_notifier
 from ..override import OverrideError, recheck, remove
 from ..pipeline import build_services, funnel, reset_data, run_pipeline, step_threshold
 from ..review import ReviewError, approve, regenerate, reject
-from ..sending import make_sender, send_approved
+from ..sending import SendError, make_sender, send_approved
 from .present import (
     BUCKET_TONE,
     BUCKETS,
+    GLOSSARY,
     NEEDS_PERSON,
     bucket_of,
     describe_event,
@@ -41,6 +42,7 @@ from .present import (
     highlight_notes,
     phrase,
     step_status,
+    term_id,
     timeline,
     tone,
     tracker,
@@ -131,6 +133,7 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         status_label=lambda s: STATUS_LABELS[Status(s)], tone=tone, buckets=BUCKETS, bucket_tone=BUCKET_TONE,
         phrase=phrase, step_status=step_status, state_words=STATE_WORDS, needs_person=NEEDS_PERSON,
         intake=INTAKE, who=who, describe_event=describe_event, event_detail=event_detail,
+        glossary=GLOSSARY, term_id=term_id,
     )
     templates.env.filters.update(fromjson=lambda value: loads(value, []), headline=headline, explain=explain_terms)
     state = RunState()
@@ -149,6 +152,11 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
     def all_leads(conn) -> list[dict]:
         return [dict(r) for r in conn.execute("SELECT * FROM leads WHERE campaign_id = ? ORDER BY id", (campaign.id,))]
 
+    def sending_label() -> str:
+        route = {"outbox": "saved to the outbox folder", "smtp": "through SMTP",
+                 "resend": "through Resend"}.get(settings.email_sender, settings.email_sender)
+        return f"to the demo inbox, {route}" if settings.demo_inbox else route
+
     def render(request: Request, name: str, conn, **context) -> HTMLResponse:
         flash = None
         if raw := request.cookies.get("flash"):
@@ -162,7 +170,8 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         theme = request.cookies.get("theme")
         here = request.url.path + (f"?{request.url.query}" if request.url.query else "")
         context.update(
-            campaign=campaign, model=model_label(), sender=settings.email_sender, run=state, flash=flash,
+            campaign=campaign, model=model_label(), sending=sending_label(), demo_inbox=bool(settings.demo_inbox),
+            run=state, flash=flash,
             counts=counts, reviewer=unquote(request.cookies.get("reviewer", "")),
             theme=theme if theme in THEMES else "light", here=here, demo_online=settings.demo_online,
         )
@@ -228,10 +237,13 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
 
     @app.post("/send")
     def send():
+        try:
+            sender = make_sender(settings)
+        except SendError as exc:
+            return redirect("/log", str(exc), "bad")
         conn = connect(settings.db_path)
         try:
-            summary = send_approved(conn, campaign, make_sender(settings), settings.allowed_recipient_suffixes,
-                                    notifier=notifier)
+            summary = send_approved(conn, campaign, sender, settings.allowed_recipient_suffixes, notifier=notifier)
         finally:
             conn.close()
         kind = "ok" if not (summary.blocked or summary.failed) else "warn"

@@ -129,7 +129,7 @@ def headline(reason: str | None) -> str:
     return text[: match.start()] if match else text
 
 
-# --- hover explanations for terms -------------------------------------------------
+# --- explanations for terms: a small "i" that opens one line --------------------------
 
 GLOSSARY = {
     "catch-all": "A domain that accepts mail for any address, so we can't tell whether this mailbox really exists.",
@@ -144,11 +144,22 @@ GLOSSARY = {
 _TERMS = re.compile("|".join(re.escape(t) for t in GLOSSARY), re.IGNORECASE)
 
 
+def term_id(term: str) -> str:
+    """The id of a term's explanation box, for example term-catch-all."""
+    return "term-" + re.sub(r"[^a-z0-9]+", "-", term.lower()).strip("-")
+
+
 def explain_terms(text: str | None) -> Markup:
-    """Escape the text, then wrap known terms in <abbr title="..."> so hovering explains them."""
+    """Escape the text, then put a small "i" after each known term.
+
+    Clicking or tapping the "i" opens the term's explanation, which base.html prints once per page.
+    It uses the HTML popover attribute, so it needs no JavaScript and works on phones, where hovering
+    doesn't.
+    """
     def wrap(match: re.Match) -> str:
         term = next(t for t in GLOSSARY if t.lower() == match.group(0).lower())
-        return f'<abbr title="{escape(GLOSSARY[term])}">{match.group(0)}</abbr>'
+        return (f'{match.group(0)}<button type="button" class="info" popovertarget="{term_id(term)}" '
+                f'aria-label="What does {escape(term)} mean?">i</button>')
 
     return Markup(_TERMS.sub(wrap, str(escape(text or ""))))
 

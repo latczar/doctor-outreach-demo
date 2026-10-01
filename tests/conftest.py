@@ -27,6 +27,8 @@ def settings(tmp_path):
         exports_dir=tmp_path / "exports",
         llm_provider="fake",
         email_sender="outbox",
+        demo_inbox="",  # tests never use the inbox or key from your .env
+        resend_api_key="",
     )
 
 
