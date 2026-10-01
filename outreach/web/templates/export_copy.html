@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set active = "doctors" %}
+{% block title %}Copy for Google Sheets{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <p><a href="/doctors?{{ query_string }}">&larr; Back to the list</a></p>
+  <h1>Copy for Google Sheets</h1>
+  <p class="lead">{{ count }} doctor{{ 's' if count != 1 }}, one row each, with the same columns as the CSV download.</p>
+</div>
+<section class="card">
+  <ol class="steps-plain">
+    <li>Click <strong>Copy to clipboard</strong>, or click in the box and press Ctrl+A, then Ctrl+C.</li>
+    <li>Open a new Google Sheet: type <strong>sheets.new</strong> in your browser's address bar.</li>
+    <li>Click cell A1 and paste with Ctrl+V. Each value lands in its own column. This works in Excel too.</li>
+  </ol>
+  <p class="copy-row">
+    <button class="primary" type="button" id="copy">Copy to clipboard</button>
+    <span id="copied" class="muted" aria-live="polite"></span>
+  </p>
+  <label class="sr" for="tsv">The list as tab-separated text</label>
+  <textarea id="tsv" class="tsv" readonly rows="14" spellcheck="false">{{ tsv }}</textarea>
+  <p class="muted small">The list holds personal data, so paste it into the company's Google account, not a personal one.</p>
+</section>
+<script>
+  // The app's only script: copy the text above to the clipboard. Without it, select the text and copy by hand.
+  document.getElementById('copy').addEventListener('click', async () => {
+    const box = document.getElementById('tsv'), note = document.getElementById('copied');
+    try {
+      await navigator.clipboard.writeText(box.value);
+      note.textContent = 'Copied. Now paste into cell A1.';
+    } catch {
+      box.select();
+      note.textContent = 'Press Ctrl+C to copy the selected text.';
+    }
+  });
+</script>
+{% endblock %}

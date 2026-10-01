@@ -1,0 +1,11 @@
+.venv/
+.pytest_cache/
+__pycache__/
+.claude/
+.env
+outbox/
+exports/
+tests/
+docs/demo-script.md
+data/outreach.db
+data/outreach.db-*

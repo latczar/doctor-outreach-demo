@@ -1,0 +1,11 @@
+{
+  "_note": "Stand-in for an enrichment service. Maps an employer to its email domain and address pattern. All domains use the reserved .example TLD, so nothing can ever be delivered.",
+  "employers": {
+    "northbridge university hospitals nhs foundation trust": {"domain": "northbridge.nhs.example", "pattern": "first.last"},
+    "calder valley hospitals nhs trust": {"domain": "caldervalley.nhs.example", "pattern": "first.last"},
+    "st aldrics childrens hospital": {"domain": "staldrics.nhs.example", "pattern": "first.last"},
+    "harrowgate medical practice": {"domain": "harrowgatepractice.example", "pattern": "first.last"},
+    "riverside private clinic": {"domain": "riversideclinic.example", "pattern": "f.last"},
+    "westmere health partnership": {"domain": "westmere-health.example", "pattern": "f.last"}
+  }
+}

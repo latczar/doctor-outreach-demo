@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% set active = "log" %}
+{% block title %}Log{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>Outreach log</h1>
+  <p class="muted">Every email we have sent, including earlier campaigns. The "not previously contacted" step reads this table, so the loop closes.</p>
+</div>
+
+<section class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>When</th><th>Campaign</th><th>Doctor</th><th>Email</th><th>Status</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for s in sends %}
+      <tr>
+        <td class="small nowrap">{{ s.sent_at[:16] | replace('T', ' ') }}</td>
+        <td class="small">{{ s.campaign_id }}</td>
+        <td>{% if s.lead_id %}<a href="/leads/{{ s.lead_id }}">{{ s.full_name }}</a>{% else %}{{ s.full_name }}{% endif %}</td>
+        <td class="small">{{ s.email }}</td>
+        <td><span class="tag {{ 'good' if s.status == 'sent' else 'muted' if s.status == 'imported' else 'warn' }}">
+          {{ {'imported': 'earlier campaign', 'sending': 'sending (check by hand)'}.get(s.status, s.status) }}</span></td>
+        <td class="small">{{ s.outcome or s.error or s.message_id or '' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">Nothing logged yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="actions-inline">
+    <a class="button" href="/export/final.csv">Export final list</a>
+    <a class="button quiet" href="/export/all.csv">Export every doctor</a>
+  </p>
+</section>
+
+<section class="card" id="alerts">
+  <h2>Urgent alerts</h2>
+  <p class="muted small">Sent through one hook, so n8n or Zapier can forward them to WhatsApp, Slack or Teams. In this demo they go to <code>outbox/alerts.log</code>.</p>
+  {% if alerts %}
+    <ul class="alerts">
+      {% for a in alerts %}{% set d = a.detail | fromjson %}
+        <li><span class="tag {{ 'warn' if d.delivered else 'bad' }}">{{ 'Alert sent' if d.delivered else 'Not delivered' }}</span>
+          {{ d.text }} <span class="muted small">{{ a.at[:16] | replace('T', ' ') }} UTC, to the {{ d.channel }}{% if d.error %}: {{ d.error }}{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No urgent alerts.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ 'Do-not-contact list' | explain }}</h2>
+  <ul class="plain">
+    {% for s in suppressed %}<li>{{ s.email }} <span class="muted">since {{ s.added_at[:10] }}: {{ s.reason }}</span></li>{% endfor %}
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Everything that happened <span class="muted small">(latest 150 events, newest first)</span></h2>
+  <p class="muted small">Every decision, by the system or by a person, is written here as it happens. Nothing is edited afterwards.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>When (UTC)</th><th>Who</th><th>Doctor</th><th>What happened</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+      {% set detail = e.detail | fromjson %}
+      <tr>
+        <td class="small nowrap">{{ e.at[:16] | replace('T', ' ') }}</td>
+        <td class="small">{{ who(e.actor) }}</td>
+        <td>{% if e.lead_id %}<a href="/leads/{{ e.lead_id }}">{{ e.full_name or '#' ~ e.lead_id }}</a>{% endif %}</td>
+        <td>{{ describe_event(e.event, e.actor, detail) }}</td>
+        <td class="small">{{ event_detail(detail) | explain }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

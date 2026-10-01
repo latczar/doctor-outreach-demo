@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+.claude/
+.vercel/
+data/*.db
+data/*.db-*
+!data/demo-snapshot.db
+outbox/
+exports/

@@ -1,0 +1,24 @@
+{
+  "_note": "Stand-in for a real email verification service. mx = the domain has a mail server. catch_all = it accepts every address, so a mailbox can't be confirmed. On other domains, only the listed mailboxes exist.",
+  "domains": {
+    "northbridge.nhs.example": {
+      "mx": true,
+      "catch_all": false,
+      "mailboxes": ["priya.raman", "t.hargreaves", "emily.chen", "marcus.bell", "daniel.price", "k.asante", "m.iqbal", "chloe.barker", "isla.mckenzie", "cardio.secretary"]
+    },
+    "caldervalley.nhs.example": {"mx": true, "catch_all": true, "mailboxes": []},
+    "staldrics.nhs.example": {
+      "mx": true,
+      "catch_all": false,
+      "mailboxes": ["sarah.oneill", "info", "rachel.moore", "nadia.petrova"]
+    },
+    "harrowgatepractice.example": {
+      "mx": true,
+      "catch_all": false,
+      "mailboxes": ["j.okafor", "laura.simmons", "ella.thompson"]
+    },
+    "riversideclinic.example": {"mx": true, "catch_all": false, "mailboxes": ["ben.carter", "s.wright"]},
+    "lakeshoregeneral.example": {"mx": true, "catch_all": false, "mailboxes": ["aisha.malik"]},
+    "westmere-health.example": {"mx": false, "catch_all": false, "mailboxes": []}
+  }
+}

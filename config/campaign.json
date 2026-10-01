@@ -1,0 +1,39 @@
+{
+  "id": "mentors-q4-2026",
+  "name": "Clinical mentor recruitment, Q4 2026",
+  "purpose": "Invite UK doctors to host visiting medical students for short observership placements.",
+  "sender": {
+    "name": "Alex Morgan",
+    "role": "Partnerships Lead",
+    "organisation": "MedicPaths (demo)",
+    "email": "partnerships@medicpaths.example"
+  },
+  "offer_facts": [
+    "Placements last two to four weeks.",
+    "Mentors choose the dates and host one or two students at a time.",
+    "Students are in their clinical years of medical school.",
+    "Mentors receive an honorarium of £300 per placement.",
+    "The first step is a 15-minute call with no commitment."
+  ],
+  "targeting": {
+    "countries": ["United Kingdom"],
+    "specialties": [
+      "Anaesthetics",
+      "Cardiology",
+      "Emergency Medicine",
+      "General Practice",
+      "General Surgery",
+      "Paediatrics"
+    ],
+    "grades": [
+      "Consultant",
+      "Associate Specialist",
+      "Registrar (ST3+)",
+      "GP Partner",
+      "Salaried GP"
+    ]
+  },
+  "cooldown_days": 180,
+  "daily_send_cap": 25,
+  "max_draft_attempts": 3
+}

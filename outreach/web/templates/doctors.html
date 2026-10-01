@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% set active = "doctors" %}
+{% block title %}{{ 'Final list' if filters.show == 'final' else 'Doctors' }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  {% if filters.show == 'final' %}
+    <h1>Final list</h1>
+    <p class="lead">Doctors cleared to contact: they fit the campaign, have a verified email, and haven't been contacted recently.</p>
+  {% else %}
+    <h1>Doctors</h1>
+    <p class="lead">Everyone from the research list: how far they got, and why.</p>
+  {% endif %}
+</div>
+
+{% if heading %}
+  <div class="banner info">
+    <strong>Showing the doctors stopped or waiting at "{{ heading.label }}"</strong>
+    <span>How this step decides: {{ heading.how | explain }} <a href="/doctors">Show everyone</a></span>
+  </div>
+{% endif %}
+
+<form class="card search" method="get" action="/doctors" role="search">
+  <label class="grow">Search
+    <span class="field-hint">Name, employer, specialty or email</span>
+    <input type="search" name="q" value="{{ filters.q }}">
+  </label>
+  <label>Specialty
+    <select name="specialty">
+      <option value="">Any</option>
+      {% for s in specialties %}<option {{ 'selected' if s == filters.specialty }}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Country
+    <select name="country">
+      <option value="">Any</option>
+      {% for c in countries %}<option {{ 'selected' if c == filters.country }}>{{ c }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if filters.show %}<input type="hidden" name="show" value="{{ filters.show }}">{% endif %}
+  {% if filters.step %}<input type="hidden" name="step" value="{{ filters.step }}">{% endif %}
+  <button class="primary">Search</button>
+  {% if filters.q or filters.specialty or filters.country %}<a class="clear" href="/doctors{{ '?show=' ~ filters.show if filters.show }}">Clear</a>{% endif %}
+</form>
+
+<nav class="tabs" aria-label="Show">
+  {% for tab in tabs %}
+    <a href="{{ tab.href }}" class="{{ 'on' if tab.on }}">{% if tab.tone %}<i class="dot {{ tab.tone }}"></i>{% endif %}{{ tab.label }} <span>{{ tab.count }}</span></a>
+  {% endfor %}
+</nav>
+
+<div class="list-bar">
+  <p><strong>{{ rows | length }} doctor{{ 's' if rows | length != 1 }}</strong> shown</p>
+  <div class="list-actions">
+    <a class="button" href="/export.csv?{{ query_string }}">Download CSV</a>
+    <a class="button" href="/export/copy?{{ query_string }}">Copy for Google Sheets</a>
+  </div>
+</div>
+
+<p class="legend small" aria-hidden="true">
+  <span class="wide-only">The dots follow each doctor through the workflow:</span>
+  <span class="key done"></span> passed <span class="key waiting"></span> waiting
+  <span class="key person"></span> needs you <span class="key stopped"></span> stopped
+  <span class="key todo"></span> not reached<span class="wide-only">. Hover over a dot to see the step.</span>
+</p>
+
+<ul class="doctor-list">
+  {% for r in rows %}{% set l = r.lead %}
+    <li class="doctor">
+      <div class="doctor-who">
+        <a href="/leads/{{ l.id }}"><strong>{{ (l.title ~ ' ') if l.title }}{{ l.full_name or '(no name)' }}</strong></a>
+        <span class="small">{{ l.grade or l.grade_raw or 'Grade unknown' }}, {{ l.specialty or l.specialty_raw or 'specialty unknown' }}</span>
+        <span class="muted small">{{ l.employer }}{% if l.country %}, {{ l.country }}{% endif %}</span>
+      </div>
+      <div class="doctor-where">
+        <ol class="tracker" aria-label="Progress: {{ r.where[0] }}">
+          {% for t in r.tracker %}<li class="{{ t.state }}" title="{{ t.label }}: {{ state_words[t.state] }}"><span class="sr">{{ t.label }}: {{ state_words[t.state] }}</span></li>{% endfor %}
+        </ol>
+        <p class="where-lead {{ r.bucket }}">{{ r.where[0] }}</p>
+        <p class="small">{{ r.where[1] | explain }}</p>
+        {% if l.status == 'NEEDS_REVIEW' %}<p><a class="button small-button primary" href="/leads/{{ l.id }}#decide">Decide</a></p>{% endif %}
+      </div>
+      <div class="doctor-email small">
+        {{ l.email or 'No email' }}
+        {% if l.email_origin == 'pattern_guess' %}<span class="tag warn" title="Not in the research list. Worked out from the employer's email pattern, then verified.">guessed</span>{% endif %}
+        {% if l.email_origin == 'person' %}<span class="tag" title="A person added or corrected this address.">added by a person</span>{% endif %}
+      </div>
+    </li>
+  {% else %}
+    <li class="empty">No doctors match. <a href="/doctors">Clear the search and filters</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

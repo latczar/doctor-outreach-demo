@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% set active = "doctors" %}
+{% block title %}{{ lead.full_name or 'Doctor #' ~ lead.id }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <p><a href="/doctors">&larr; All doctors</a></p>
+  <h1>{{ lead.title }} {{ lead.full_name or '(no name)' }}</h1>
+  <ol class="tracker big" aria-label="Progress: {{ where[0] }}">
+    {% for t in dots %}<li class="{{ t.state }}" title="{{ t.label }}: {{ state_words[t.state] }}"><span class="sr">{{ t.label }}: {{ state_words[t.state] }}</span></li>{% endfor %}
+  </ol>
+  <p class="where-lead {{ 'final' if tone(lead.status) == 'good' else ('needs' if tone(lead.status) == 'warn' else 'removed') }}">{{ where[0] }}</p>
+  <p>{{ lead.reason | explain }}</p>
+</div>
+
+{% if lead.status == 'NEEDS_REVIEW' %}
+<section class="card decide" id="decide">
+  <h2>This doctor needs your decision</h2>
+  <p>The rules couldn't decide on their own. Fix the detail or confirm the email, and the rules run again from the top. Or take the doctor off the list. Either way, your name and note go in the history.</p>
+  {% if decide_error %}
+    <div class="error-summary" role="alert"><h3>That didn't work</h3><p>{{ decide_error }}</p></div>
+  {% endif %}
+  <div class="decide-grid">
+    <form class="decide-form" method="post" action="/leads/{{ lead.id }}/recheck">
+      <h3>Fix and re-check</h3>
+      {% if lead.stage == 'qualify' %}
+        <div class="field-row">
+          <label>Title
+            <select name="title">
+              {% set current_title = values.get('title') or lead.title or 'Dr' %}
+              {% for t in ['Dr', 'Mr', 'Ms', 'Mrs', 'Miss', 'Prof'] %}<option {{ 'selected' if t == current_title }}>{{ t }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="grow">Full name
+            <span class="field-hint">First name and surname</span>
+            <input name="full_name" value="{{ values.get('full_name', lead.full_name or '') }}" autocomplete="off">
+          </label>
+        </div>
+        <label>Grade
+          <span class="field-hint">The research list said: {{ lead.grade_raw or 'blank' }}</span>
+          <select name="grade">
+            {% set current_grade = values.get('grade') or lead.grade or '' %}
+            <option value="">Choose a grade</option>
+            {% for g in grades %}<option value="{{ g }}" {{ 'selected' if g == current_grade }}>{{ g }}{{ ' (targeted)' if g in targeted_grades else '' }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Better email (optional)
+          <span class="field-hint">Now: {{ lead.email or 'none' }}. Leave this blank to keep it.</span>
+          <input name="email" type="email" value="{{ values.get('email', '') }}">
+        </label>
+      {% else %}
+        <label>Different email (optional)
+          <span class="field-hint">Now: {{ lead.email or 'none' }}. Leave this blank to keep it.</span>
+          <input name="email" type="email" value="{{ values.get('email', '') }}">
+        </label>
+        <label class="check">
+          <input type="checkbox" name="confirm_email" value="yes" {{ 'checked' if values.get('confirm_email') }}>
+          I've confirmed this mailbox exists, for example by calling the trust
+        </label>
+        <p class="muted small">A confirmation only covers what a computer can't check. If the mail server says a mailbox doesn't exist, that still decides.</p>
+      {% endif %}
+      <label>What did you check?
+        <span class="field-hint">For example: checked the trust's staff directory</span>
+        <input name="note" value="{{ values.get('note', '') }}" required>
+      </label>
+      <label>Your name
+        <input name="reviewer" value="{{ reviewer }}" required>
+      </label>
+      <button class="primary">Re-check with these details</button>
+    </form>
+
+    <form class="decide-form" method="post" action="/leads/{{ lead.id }}/remove">
+      <h3>Take off the list</h3>
+      <p class="muted small">For a doctor who shouldn't be contacted in this campaign.</p>
+      <label>Reason
+        <span class="field-hint">For example: not a clinical role</span>
+        <input name="note" value="{{ values.get('remove_note', '') }}" required>
+      </label>
+      <label>Your name
+        <input name="reviewer" value="{{ reviewer }}" required>
+      </label>
+      <button class="danger">Take off the list</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+<div class="layout">
+  <section class="card">
+    <h2>Details</h2>
+    <dl class="summary-list">
+      <div><dt>Grade</dt><dd>{{ lead.grade or 'Not recognised' }} <span class="muted small">The research list said: {{ lead.grade_raw or 'blank' }}</span></dd></div>
+      <div><dt>Specialty</dt><dd>{{ lead.specialty or 'Not recognised' }} <span class="muted small">The research list said: {{ lead.specialty_raw or 'blank' }}</span></dd></div>
+      <div><dt>Employer</dt><dd>{{ lead.employer }}</dd></div>
+      <div><dt>Country</dt><dd>{{ lead.country }}</dd></div>
+      <div><dt>{{ 'Registration number' | explain }}</dt><dd>{{ lead.reg_number or 'Not given' }}</dd></div>
+      <div><dt>Email</dt><dd>{{ lead.email or 'None' }}{% if lead.email_origin == 'pattern_guess' %} <span class="tag warn">guessed from pattern</span>{% endif %}</dd></div>
+      {% if salutation %}<div><dt>Greeting</dt><dd>Dear {{ salutation }},</dd></div>{% endif %}
+      <div><dt>Source</dt><dd>{{ lead.source }}</dd></div>
+      <div><dt>Profile notes</dt><dd class="notes">{{ notes_html or 'None' }}
+        {% if injection %}<span class="muted small">The red text tries to give the AI orders. It is passed to the AI as data only.</span>{% endif %}</dd></div>
+    </dl>
+    {% if lead.duplicate_of %}
+      <p>This row is a copy of <a href="/leads/{{ lead.duplicate_of }}">#{{ lead.duplicate_of }}</a>.</p>
+    {% endif %}
+    {% if duplicates %}
+      <h3>Merged copies</h3>
+      <ul class="plain">
+        {% for dup in duplicates %}<li><a href="/leads/{{ dup.id }}">#{{ dup.id }}</a> {{ dup.reason }}</li>{% endfor %}
+      </ul>
+      {% if merged_from %}<p class="muted small">Filled in from the copies: {% for field, where_from in merged_from.items() %}{{ field | replace('_', ' ') }} ({{ where_from }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+    {% endif %}
+  </section>
+
+  <section class="card wide">
+    <h2>Journey through the workflow</h2>
+    <ol class="timeline">
+      {% for s in steps %}
+        <li class="{{ s.state }}">
+          <div class="tl-head"><strong>{{ s.label }}</strong>
+            <span class="tl-state">{{ {'done': 'Passed', 'waiting': 'Waiting', 'person': 'Needs a person', 'stopped': 'Stopped', 'todo': 'Not reached'}[s.state] }}</span></div>
+          {% if s.text %}<div>{{ s.text | explain }}</div>{% endif %}
+          <div class="small muted">How this step decides: {{ s.how | explain }}</div>
+        </li>
+      {% endfor %}
+    </ol>
+
+    {% if drafts %}
+      <h2>Drafts</h2>
+      {% for d in drafts %}
+        {% set checks = d.checks | fromjson %}
+        {% set failed = checks | rejectattr('ok') | list %}
+        <details class="draftlog" {{ 'open' if loop.last }}>
+          <summary>Attempt {{ d.attempt }}:
+            {% if failed %}<span class="tag warn">{{ failed | length }} check{{ 's' if failed | length != 1 }} failed</span>{% else %}<span class="tag good">all checks passed</span>{% endif %}
+            <span class="muted small">{{ d.status | replace('_', ' ') | lower }}, by {{ d.provider }}{% if d.model %} ({{ d.model }}){% endif %}{% if d.reviewer %}, reviewed by {{ d.reviewer }}{% endif %}{% if d.edited_by_reviewer %}, edited{% endif %}</span></summary>
+          {% if d.reviewer_instruction %}<p class="muted">Reviewer asked: {{ d.reviewer_instruction }}</p>{% endif %}
+          {% if d.review_note %}<p class="muted">Note: {{ d.review_note }}</p>{% endif %}
+          {% if failed %}<ul class="checks list">{% for c in failed %}<li class="fail">{{ c.detail }}</li>{% endfor %}</ul>{% endif %}
+          {% if d.subject %}
+          <div class="email-preview">
+            <div class="subject"><span class="muted small">Subject</span> {{ d.subject }}</div>
+            <div class="part ai"><span class="part-label">Written by AI</span><div class="text">{{ d.body }}</div></div>
+            <div class="part code"><span class="part-label">Added by code</span><div class="text">{{ d.footer }}</div></div>
+          </div>
+          {% endif %}
+        </details>
+      {% endfor %}
+    {% endif %}
+
+    <h2>History</h2>
+    <table>
+      <thead><tr><th>When (UTC)</th><th>Who</th><th>What happened</th><th>Detail</th></tr></thead>
+      <tbody>
+      {% for e in events %}
+        {% set detail = e.detail | fromjson %}
+        <tr><td class="small nowrap">{{ e.at[:16] | replace('T', ' ') }}</td><td class="small">{{ who(e.actor) }}</td>
+          <td>{{ describe_event(e.event, e.actor, detail) }}</td><td class="small">{{ event_detail(detail) | explain }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

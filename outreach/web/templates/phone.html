@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% set active = "phone" %}
+{% block title %}Phone view{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>Phone view</h1>
+  <p class="lead">The same app, shown at the size of a typical phone (390 by 844 pixels). Everything works inside the frame.</p>
+</div>
+<div class="phone-wrap">
+  <div class="phone" aria-label="Phone-sized view">
+    <iframe src="{{ target }}" title="The app at phone size" width="390" height="760"></iframe>
+  </div>
+  <div class="card phone-links">
+    <h2>Jump to</h2>
+    <ul class="plain">
+      <li><a href="/phone?path=/">Overview</a></li>
+      <li><a href="/phone?path=/doctors%3Fshow%3Dfinal">Final list</a></li>
+      <li><a href="/phone?path=/review">Review emails</a></li>
+      <li><a href="/phone?path=/log">Outreach log</a></li>
+    </ul>
+    <p class="muted small">The pages use one layout that rearranges itself for small screens, so there is no separate mobile app to maintain.</p>
+    <p><a href="{{ target }}">Back to the full-size page</a></p>
+  </div>
+</div>
+{% endblock %}

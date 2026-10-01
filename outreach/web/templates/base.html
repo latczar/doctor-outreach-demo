@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-GB" data-theme="{{ theme }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Outreach{% endblock %} | Doctor outreach</title>
+  {% block head %}{% endblock %}
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="top-inner">
+      <a class="brand" href="/"><strong>Doctor outreach</strong><span>{{ campaign.name }}</span></a>
+      <nav aria-label="Main">
+        {% set waiting = counts.get('PENDING_APPROVAL', 0) + counts.get('DRAFT_FAILED', 0) %}
+        <a href="/" class="{{ 'on' if active == 'overview' }}">Overview</a>
+        <a href="/doctors" class="{{ 'on' if active == 'doctors' }}">Doctors</a>
+        <a href="/review" class="{{ 'on' if active == 'review' }}">Review emails{% if waiting %} <span class="count">{{ waiting }}</span>{% endif %}</a>
+        <a href="/log" class="{{ 'on' if active == 'log' }}">Outreach log</a>
+      </nav>
+      <div class="header-tools">
+        <a class="phone-link {{ 'on' if active == 'phone' }}" href="/phone?path={{ (target if active == 'phone' else here) | urlencode }}">Phone view</a>
+        <div class="theme-switch" role="group" aria-label="Colour theme">
+        <a href="/theme/light?back={{ here | urlencode }}" class="{{ 'on' if theme == 'light' }}" aria-pressed="{{ 'true' if theme == 'light' else 'false' }}">Light</a>
+        <a href="/theme/dark?back={{ here | urlencode }}" class="{{ 'on' if theme == 'dark' }}" aria-pressed="{{ 'true' if theme == 'dark' else 'false' }}">Dark</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  {% if demo_online %}
+    <div class="demo-banner">Online prototype with made-up data. New drafts come from a template writer, because the local AI model isn't online; the drafts loaded at the start were written by the real model. Changes reset when the server restarts.</div>
+  {% endif %}
+  {% if run.running and active != 'run' %}
+    <div class="run-banner"><span class="spinner"></span>The pipeline is running. <a href="/run">Watch its progress</a></div>
+  {% endif %}
+  <main id="main">
+    {% if flash %}
+      <div class="banner {{ flash.kind }}" role="status">
+        <strong>{{ {'ok': 'Done', 'warn': 'Please check', 'bad': 'There is a problem'}.get(flash.kind, 'Note') }}</strong>
+        <span>{{ flash.text }}</span>
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="foot">
+    <p>Prototype with made-up data. Every address uses the reserved <code>.example</code> domain, and the send step refuses anything else.</p>
+    <p>AI model: {{ model }} · Sending to: {{ 'the outbox folder' if sender == 'outbox' else 'SMTP' }} <span class="wide-only">· <a href="/phone?path={{ here | urlencode }}">See this page at phone size</a></span></p>
+  </footer>
+</body>
+</html>

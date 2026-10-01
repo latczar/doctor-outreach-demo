@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set active = "overview" %}
+{% block title %}Overview{% endblock %}
+
+{% macro step_row(step, number) %}
+{% set status, status_tone = step_status(step) %}
+<li class="task">
+  <span class="task-num" aria-hidden="true">{{ number }}</span>
+  <div class="task-body">
+    <div class="task-head">
+      <h3>{{ step.label }}</h3>
+      <span class="tag {{ status_tone }}">{{ status }}</span>
+    </div>
+    <p class="task-summary">{{ step.summary }}</p>
+    {% if step.of %}<div class="meter" aria-hidden="true"><span style="width: {{ (100 * step.count / step.of) | round | int }}%"></span></div>{% endif %}
+    <p class="hint">{{ step.how | explain }}</p>
+    {% if step.waiting or step.stopped %}
+      <p class="task-outcomes">
+        {% for code, n in step.waiting.items() %}<span class="tag waiting">{{ phrase(code, n) }}</span>{% endfor %}
+        {% for code, n in step.stopped.items() %}<span class="tag {{ 'warn' if code in needs_person else 'muted' }}">{{ phrase(code, n) }}</span>{% endfor %}
+        <a href="/doctors?step={{ step.key }}">See who, and why</a>
+      </p>
+    {% endif %}
+  </div>
+</li>
+{% endmacro %}
+
+{% block content %}
+<div class="pagehead">
+  <h1>{{ campaign.name }}</h1>
+  <p class="lead">{{ campaign.purpose }}</p>
+</div>
+
+<div class="actions">
+  <form method="post" action="/run"><button class="primary" {{ 'disabled' if run.running }}>Run the pipeline</button></form>
+  {% if counts %}<a class="button" href="/doctors?show=final">Open the final list</a>{% endif %}
+  <form method="post" action="/reset" onsubmit="return confirm('Empty the database and start the demo again?')">
+    <button class="quiet">Reset demo</button>
+  </form>
+</div>
+<p class="actions-help">
+  <strong>Run the pipeline</strong> reads the research list, runs the rule steps, then has the AI write an email for each doctor cleared to contact. Nothing is sent: that waits for a person to approve and click Send. Running it again only picks up new rows.
+  <strong>Reset demo</strong> empties everything, so you can start from the beginning.
+</p>
+
+{% if not counts %}
+  <section class="card start">
+    <h2>Start here</h2>
+    <p>This tool turns a raw research list into a checked list of doctors, writes a personal email for each one, and sends only what a person approves.</p>
+    <ol class="steps-plain">
+      <li><strong>Rules check the list.</strong> Copies of the same doctor are merged. Then each doctor must fit the campaign, have a verified email, and not have been contacted recently. No AI makes these decisions.</li>
+      <li><strong>The AI writes an email for each doctor on the final list.</strong> Code checks every draft before you see it.</li>
+      <li><strong>You approve each email,</strong> edit it, or reject it. Nothing is sent without your name against it.</li>
+      <li><strong>Approved emails are sent once and logged,</strong> so nobody is contacted twice by mistake.</li>
+    </ol>
+    <p>Click <strong>Run the pipeline</strong> to process the made-up research list of 27 doctors.</p>
+  </section>
+{% else %}
+  {% set to_review = counts.get('PENDING_APPROVAL', 0) %}
+  {% set to_fix = counts.get('DRAFT_FAILED', 0) %}
+  {% set to_check = counts.get('NEEDS_REVIEW', 0) %}
+  {% set to_send = counts.get('APPROVED', 0) + counts.get('SEND_FAILED', 0) %}
+  <section class="card">
+    <h2>What needs you</h2>
+    {% if to_review or to_fix or to_check or to_send %}
+      <ul class="todo">
+        {% if to_review %}
+          <li><span class="todo-count">{{ to_review }}</span>
+            <span class="todo-text"><strong>Review {{ to_review }} email{{ 's' if to_review != 1 }}</strong><span>Written by the AI. Approve, edit or reject each one.</span></span>
+            <a class="button primary" href="/review">Review</a></li>
+        {% endif %}
+        {% if to_fix %}
+          <li><span class="todo-count warn">{{ to_fix }}</span>
+            <span class="todo-text"><strong>Fix {{ to_fix }} email{{ 's' if to_fix != 1 }}</strong><span>{{ 'It' if to_fix == 1 else 'They' }} failed our checks. Edit {{ 'it' if to_fix == 1 else 'them' }}, or ask for another draft.</span></span>
+            <a class="button" href="/review">Fix</a></li>
+        {% endif %}
+        {% if to_check %}
+          <li><span class="todo-count warn">{{ to_check }}</span>
+            <span class="todo-text"><strong>Decide on {{ to_check }} doctor{{ 's' if to_check != 1 }}</strong><span>The rules couldn't decide, for example an unknown grade. Fix the detail, or take them off the list.</span></span>
+            <a class="button" href="/doctors?show=needs">Decide</a></li>
+        {% endif %}
+        {% if to_send %}
+          <li><span class="todo-count">{{ to_send }}</span>
+            <span class="todo-text"><strong>Send {{ to_send }} approved email{{ 's' if to_send != 1 }}</strong><span>Each one goes out once and is logged.</span></span>
+            <form method="post" action="/send"><button class="primary">Send</button></form></li>
+        {% endif %}
+      </ul>
+    {% else %}
+      <p class="muted">Nothing needs you right now.</p>
+    {% endif %}
+  </section>
+
+  {% if alerts %}
+    <section class="card">
+      <h2>Urgent alerts <span class="muted small">sent to the team's channel</span></h2>
+      <ul class="alerts">
+        {% for a in alerts %}{% set d = a.detail | fromjson %}
+          <li><span class="tag {{ 'warn' if d.delivered else 'bad' }}">{{ 'Alert sent' if d.delivered else 'Not delivered' }}</span>
+            {{ d.text }} <span class="muted small">{{ a.at[:16] | replace('T', ' ') }} UTC, to the {{ d.channel }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>How the final list was built</h2>
+    <p class="muted">Five rule steps, in order. Each one says how many doctors got through and why the others didn't.</p>
+    <ol class="tasks">
+      <li class="task">
+        <span class="task-num" aria-hidden="true">1</span>
+        <div class="task-body">
+          <div class="task-head"><h3>{{ intake.label }}</h3><span class="tag good">Done</span></div>
+          <p class="task-summary">{{ view.rows }} rows in the research list became {{ view.unique }} doctors</p>
+          <p class="hint">{{ intake.how | explain }}</p>
+          {% if view.duplicates %}<p class="task-outcomes"><span class="tag muted">{{ phrase('DUPLICATE', view.duplicates) }}</span> <a href="/doctors?step=dedupe">See who, and why</a></p>{% endif %}
+        </div>
+      </li>
+      {% for step in view.steps[:4] %}{{ step_row(step, loop.index + 1) }}{% endfor %}
+    </ol>
+    <div class="callout">
+      <div>
+        <strong>Final list: {{ view.final_list }} doctor{{ 's' if view.final_list != 1 }} cleared to contact</strong>
+        <p class="muted small">Search it, filter it by specialty or country, download it, or copy it into Google Sheets.</p>
+      </div>
+      <a class="button primary" href="/doctors?show=final">Open the final list</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Writing and sending</h2>
+    <p class="muted">The AI writes, code checks, a person approves, then each email is sent once and logged.</p>
+    <ol class="tasks">
+      {% for step in view.steps[4:] %}{{ step_row(step, loop.index + 5) }}{% endfor %}
+    </ol>
+  </section>
+{% endif %}
+{% endblock %}
