@@ -22,6 +22,7 @@ from .notify import Alert, Notifier, raise_alert
 
 class EmailSender(Protocol):
     name: str
+    done: str  # what happened to an email, for the summary: "sent through Resend"
 
     def send(self, message: EmailMessage) -> None: ...
 
@@ -34,6 +35,7 @@ class OutboxSender:
     """Writes each email to a folder as an .eml file. Open one in Outlook or Thunderbird to see it."""
 
     name = "outbox"
+    done = "saved to the outbox folder"
 
     def __init__(self, folder: Path):
         self.folder = folder
@@ -49,6 +51,7 @@ class SmtpSender:
     """Real SMTP, for example Mailpit on localhost:1025 (web inbox on :8025)."""
 
     name = "smtp"
+    done = "sent through SMTP"
 
     def __init__(self, host: str, port: int):
         self.host, self.port = host, port
@@ -62,6 +65,7 @@ class ResendSender:
     """Resend's email API. Until you add your own domain there, it only delivers to your own address."""
 
     name = "Resend"
+    done = "sent through Resend"
     url = "https://api.resend.com/emails"
 
     def __init__(self, api_key: str, from_address: str, client: httpx.Client | None = None):
@@ -99,6 +103,10 @@ class InboxRedirect:
     def __init__(self, sender: EmailSender, inbox: str):
         self.sender, self.inbox = sender, inbox
         self.name = f"{sender.name}, to the demo inbox"
+        # "sent to the demo inbox through Resend", or "saved to the outbox folder, addressed to the demo inbox"
+        sent = sender.done.startswith("sent ")
+        self.done = (f"sent to the demo inbox {sender.done.removeprefix('sent ')}" if sent
+                     else f"{sender.done}, addressed to the demo inbox")
 
     def send(self, message: EmailMessage) -> None:
         meant_for = message["To"]
@@ -147,15 +155,26 @@ class SendSummary:
     deferred: int = 0
     skipped: int = 0
     notes: list[str] = field(default_factory=list)
+    done: str = "sent"  # the sender's phrase, for example "sent to the demo inbox through Resend"
 
     def text(self) -> str:
-        parts = [f"Sent {self.sent}"]
-        for label, value in (("blocked", self.blocked), ("failed", self.failed),
-                             ("held for tomorrow (daily cap)", self.deferred),
-                             ("skipped (already sent)", self.skipped)):
-            if value:
-                parts.append(f"{value} {label}")
-        return ", ".join(parts) + "."
+        """What happened, in plain sentences: "1 email sent to the demo inbox through Resend." """
+        def emails(n: int) -> str:
+            return f"{n} email{'' if n == 1 else 's'}"
+
+        parts = []
+        if self.sent:
+            parts.append(f"{emails(self.sent)} {self.done}.")
+        if self.blocked:
+            parts.append(f"{emails(self.blocked)} blocked by the last check before sending. The doctor's page says why.")
+        if self.failed:
+            parts.append(f"{emails(self.failed)} failed to send, and will be tried again next time you click Send.")
+        if self.deferred:
+            parts.append(f"{emails(self.deferred)} held until tomorrow by the daily limit.")
+        if self.skipped:
+            parts.append(f"{emails(self.skipped)} skipped, because {'it was' if self.skipped == 1 else 'they were'} "
+                         "already sent.")
+        return " ".join(parts) or "There were no approved emails to send."
 
 
 def _block(conn, lead_id: int, reason: str, summary: SendSummary, actor: str) -> None:
@@ -175,7 +194,7 @@ def send_approved(
     notifier: Notifier | None = None,
 ) -> SendSummary:
     today = today or datetime.now(timezone.utc).date()
-    summary = SendSummary()
+    summary = SendSummary(done=getattr(sender, "done", "sent"))
     sent_today = conn.execute(
         "SELECT COUNT(*) FROM outreach_log WHERE campaign_id = ? AND status = 'sent' AND substr(sent_at, 1, 10) = ?",
         (campaign.id, today.isoformat()),

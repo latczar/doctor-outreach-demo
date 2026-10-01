@@ -11,7 +11,15 @@ import pytest
 from outreach.db import get_lead
 from outreach.pipeline import run_pipeline
 from outreach.review import ReviewError, approve, regenerate, reject
-from outreach.sending import InboxRedirect, OutboxSender, ResendSender, SendError, make_sender, send_approved
+from outreach.sending import (
+    InboxRedirect,
+    OutboxSender,
+    ResendSender,
+    SendError,
+    SendSummary,
+    make_sender,
+    send_approved,
+)
 
 from .conftest import SEED, TODAY
 
@@ -226,3 +234,14 @@ def test_resend_needs_a_key_and_an_inbox(settings):
         make_sender(replace(settings, email_sender="resend", resend_api_key="re_test_key"))
     ready = make_sender(replace(settings, email_sender="resend", resend_api_key="re_test_key", demo_inbox=INBOX))
     assert ready.name == "Resend, to the demo inbox"
+
+
+def test_the_send_summary_reads_as_plain_sentences(settings):
+    assert SendSummary().text() == "There were no approved emails to send."
+    assert SendSummary(sent=1, done="saved to the outbox folder").text() == "1 email saved to the outbox folder."
+    assert SendSummary(sent=2, failed=1, done="sent through Resend").text() == (
+        "2 emails sent through Resend. 1 email failed to send, and will be tried again next time you click Send.")
+    resend = InboxRedirect(ResendSender("re_test_key", "onboarding@resend.dev"), INBOX)
+    assert resend.done == "sent to the demo inbox through Resend"
+    assert InboxRedirect(OutboxSender(settings.outbox_dir), INBOX).done == \
+        "saved to the outbox folder, addressed to the demo inbox"

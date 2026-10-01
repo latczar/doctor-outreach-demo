@@ -89,7 +89,7 @@ def test_web_review_flow_and_double_approval_message(settings, conn, services):
     assert "already been reviewed" in again.text
 
     sent = client.post("/send")  # follows the redirect to /log, which shows the result once
-    assert "Sent 1." in sent.text
+    assert "1 email saved to the outbox folder." in sent.text and "No reply yet" in sent.text
     assert len(list(settings.outbox_dir.glob("*.eml"))) == 1
 
 

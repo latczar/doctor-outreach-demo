@@ -248,7 +248,8 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         finally:
             conn.close()
         kind = "ok" if not (summary.blocked or summary.failed) else "warn"
-        return redirect("/log", summary.text(), kind)
+        note = " This online copy never sends real email." if settings.demo_online and summary.sent else ""
+        return redirect("/log", summary.text() + note, kind)
 
     @app.post("/reset")
     def reset():

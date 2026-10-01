@@ -20,7 +20,8 @@
         <td class="small">{{ s.email }}</td>
         <td><span class="tag {{ 'good' if s.status == 'sent' else 'muted' if s.status == 'imported' else 'warn' }}">
           {{ {'imported': 'earlier campaign', 'sending': 'sending (check by hand)'}.get(s.status, s.status) }}</span></td>
-        <td class="small">{{ s.outcome or s.error or s.message_id or '' }}</td>
+        {# A sent email has no outcome until the doctor replies. The message ID is kept for matching replies. #}
+        <td class="small">{% if s.outcome or s.error %}{{ s.outcome or s.error }}{% elif s.status == 'sent' %}<span title="Message ID {{ s.message_id }}">No reply yet</span>{% endif %}</td>
       </tr>
     {% else %}
       <tr><td colspan="6" class="muted">Nothing logged yet.</td></tr>
