@@ -9,3 +9,6 @@ data/*.db-*
 !data/demo-snapshot.db
 outbox/
 exports/
+.vercel
+.env*
+!.env.example
