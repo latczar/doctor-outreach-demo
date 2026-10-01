@@ -199,7 +199,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 | **Doctors** | Who is on the list, and why? | Search, filters (specialty, country), three tabs (On the final list, Needs you, Not on the list), a tracker and one plain sentence per doctor. Download CSV or Copy for Google Sheets exports exactly what's on screen |
 | **Review emails** | Is this email right? | One email at a time, with the queue beside it. Blue = Personalised draft, grey = Standard footer (the same on every email), yellow = the personal detail, red = text that tries to give the system orders. The screens say "the system" rather than AI |
 | **Doctor page** | What happened to this doctor? | Tracker, step-by-step journey with reasons, every draft, history in plain words. For a doctor who needs you: a decision card (fix and re-check, or take off the list) |
-| **Outreach log** | What went out? | Every send, urgent alerts, the do-not-contact list, every event |
+| **Outreach log** | What went out? | The workflow's memory: every send (20 a page), urgent alerts, the do-not-contact list and everything that happened (25 a page). Each part says what it's for, and a key explains the statuses |
 | **Run page** | What is the pipeline doing now? | Each step's result as a sentence. The only page that refreshes itself |
 | **Replay** | What happened in the last run? | The run played back from the audit log in about 30 seconds: dots through the rule steps, one card per draft with each try, the time it took next to an estimate by hand, and how the system is used. It only reads. Space plays, R goes back to the start, P shows the prompt, F is full screen |
 | **Phone view** | Does it work on a phone? | The same app in a phone-sized frame (footer link) |

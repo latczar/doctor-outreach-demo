@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `137 passed`.
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `139 passed`.
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -32,7 +32,7 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 
 ## How I tested it (a good story to tell)
 
-- 137 automated tests run in about 14 seconds with a fake model, so they never call an AI.
+- 139 automated tests run in about 14 seconds with a fake model, so they never call an AI.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.
   2. Telling a small model "don't write 'I hope you are well'" made it write exactly that. I reworded it positively, and code now deletes that filler sentence and logs it, rather than retrying.

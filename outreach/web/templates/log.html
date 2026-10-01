@@ -1,13 +1,26 @@
 {% extends "base.html" %}
 {% set active = "log" %}
 {% block title %}Log{% endblock %}
+
+{% macro pagination(p, noun) %}
+{% if p.pages > 1 %}
+<nav class="pagination" aria-label="Pages of {{ noun }}">
+  {% if p.prev %}<a href="{{ p.prev }}" rel="prev">Previous</a>{% else %}<span></span>{% endif %}
+  <span>{{ noun | capitalize }} {{ p.first }} to {{ p.last }} of {{ p.total }} · page {{ p.page }} of {{ p.pages }}</span>
+  {% if p.next %}<a href="{{ p.next }}" rel="next">Next</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
 {% block content %}
 <div class="pagehead">
   <h1>Outreach log</h1>
-  <p class="muted">Every email we have sent, including earlier campaigns. The "not previously contacted" step reads this table, so the loop closes.</p>
+  <p class="lead">The workflow's memory. Sending writes here, and the next campaign's checks read it, so nobody is contacted twice by mistake.</p>
 </div>
 
-<section class="card">
+<section class="card" id="sent">
+  <h2>Emails sent</h2>
+  <p class="muted small">Every email sent, including earlier campaigns loaded at the start. The "Not previously contacted?" step reads this table, by email or registration number, and stops anyone contacted in the last {{ campaign.cooldown_days }} days.</p>
   <div class="table-wrap">
   <table>
     <thead><tr><th>When</th><th>Campaign</th><th>Doctor</th><th>Email</th><th>Status</th><th>Detail</th></tr></thead>
@@ -29,6 +42,13 @@
     </tbody>
   </table>
   </div>
+  {{ pagination(sends_pager, "emails") }}
+  <ul class="status-key" aria-label="What the statuses mean">
+    <li><span class="tag good">sent</span>Went out in this campaign. The detail says "No reply yet" until there's an outcome.</li>
+    <li><span class="tag muted">earlier campaign</span>History from before this system, loaded at the start.</li>
+    <li><span class="tag warn">failed</span>It didn't go out. It's tried again next time someone clicks Send.</li>
+    <li><span class="tag warn">sending (check by hand)</span>The program stopped mid-send. It's never resent automatically, so a person checks rather than risk a second email.</li>
+  </ul>
   <p class="actions-inline">
     <a class="button" href="/export/final.csv">Export final list</a>
     <a class="button quiet" href="/export/all.csv">Export every doctor</a>
@@ -37,7 +57,7 @@
 
 <section class="card" id="alerts">
   <h2>Urgent alerts</h2>
-  <p class="muted small">Sent through one hook, so n8n or Zapier can forward them to WhatsApp, Slack or Teams. In this demo they go to <code>outbox/alerts.log</code>.</p>
+  <p class="muted small">Two things count as urgent: an approved email that failed to send, and a profile that tries to give the system instructions. They go through one hook, so n8n or Zapier can forward them to WhatsApp, Slack or Teams. In this demo they go to <code>outbox/alerts.log</code>.</p>
   {% if alerts %}
     <ul class="alerts">
       {% for a in alerts %}{% set d = a.detail | fromjson %}
@@ -52,14 +72,15 @@
 
 <section class="card">
   <h2>{{ 'Do-not-contact list' | explain }}</h2>
+  <p class="muted small">People who opted out or whose email bounced. They're checked at the history step, and again just before sending, in case someone opts out after approval.</p>
   <ul class="plain">
     {% for s in suppressed %}<li>{{ s.email }} <span class="muted">since {{ s.added_at[:10] }}: {{ s.reason }}</span></li>{% endfor %}
   </ul>
 </section>
 
-<section class="card">
-  <h2>Everything that happened <span class="muted small">(latest 150 events, newest first)</span></h2>
-  <p class="muted small">Every decision, by the system or by a person, is written here as it happens. Nothing is edited afterwards.</p>
+<section class="card" id="events">
+  <h2>Everything that happened <span class="muted small">newest first</span></h2>
+  <p class="muted small">Every decision, by the system or by a person, written as it happens. Nothing is edited afterwards. Each doctor's page and the replay are built from it.</p>
   <div class="table-wrap">
   <table>
     <thead><tr><th>When (UTC)</th><th>Who</th><th>Doctor</th><th>What happened</th><th>Detail</th></tr></thead>
@@ -73,9 +94,12 @@
         <td>{{ describe_event(e.event, e.actor, detail) }}</td>
         <td class="small">{{ event_detail(detail) | explain }}</td>
       </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted">Nothing has happened yet.</td></tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
+  {{ pagination(events_pager, "events") }}
 </section>
 {% endblock %}

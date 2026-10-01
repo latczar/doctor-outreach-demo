@@ -112,7 +112,7 @@ outreach/
   web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, replay, phone view
     present.py           plain English for the screens: the three lists, trackers, highlights, the small "i" explanations
     replay.py            the replay page: the last run, rebuilt from the audit log
-tests/                   137 tests, one file per step plus end-to-end, screen, alert, decision and web tests
+tests/                   139 tests, one file per step plus end-to-end, screen, alert, decision and web tests
 ```
 
 Python, FastAPI, SQLite and server-rendered pages, styled with patterns from the GOV.UK Design System in our own look. No LangChain, no agents, no queue: each step is a function you can point at and test.

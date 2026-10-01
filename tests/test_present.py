@@ -202,6 +202,17 @@ def test_run_page_reports_each_step_and_other_pages_never_reload(settings, conn)
     assert 'http-equiv="refresh"' not in client.get("/").text
 
 
+def test_the_log_explains_itself_and_pages_through_events(client):
+    page = client.get("/log").text
+    assert "The workflow's memory" in page and "never resent automatically" in page
+    assert "Emails 1 to" not in page  # 3 emails fit on one page, so no page links
+    assert "Events 1 to 25 of" in page and 'href="/log?events=2#events"' in page
+
+    second = client.get("/log?events=2").text
+    assert "Events 26 to 50 of" in second and 'href="/log#events" rel="prev"' in second
+    assert "page 1 of" in client.get("/log?events=nonsense").text  # a bad page number goes to the first page
+
+
 def test_phone_view_frames_the_same_app(client):
     page = client.get("/phone?path=/review").text
     assert '<iframe src="/review"' in page

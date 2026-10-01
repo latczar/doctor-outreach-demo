@@ -122,6 +122,22 @@ def where_now(lead: dict) -> tuple[str, str]:
     return f"Not on the list: stopped at {current}", reason
 
 
+def pager(total: int, page: str | int, size: int) -> dict:
+    """Which slice of a long table to show, for example events 26 to 50 of 140, page 2 of 6.
+
+    A page that isn't a number, or doesn't exist, becomes the nearest real page.
+    """
+    try:
+        wanted = int(page)
+    except (TypeError, ValueError):
+        wanted = 1
+    pages = max(1, -(-total // size))
+    page = min(max(wanted, 1), pages)
+    offset = (page - 1) * size
+    return {"page": page, "pages": pages, "total": total, "size": size, "offset": offset,
+            "first": offset + 1 if total else 0, "last": min(offset + size, total)}
+
+
 def headline(reason: str | None) -> str:
     """The first sentence of a reason, for tables. The full reason is on the doctor's page."""
     text = (reason or "").strip()

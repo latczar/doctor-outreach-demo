@@ -40,6 +40,7 @@ from .present import (
     headline,
     highlight,
     highlight_notes,
+    pager,
     phrase,
     step_status,
     term_id,
@@ -56,6 +57,8 @@ THEMES = ("light", "dark")
 STATE_WORDS = {"done": "passed", "waiting": "waiting", "person": "needs you", "stopped": "stopped here",
                "todo": "not reached"}
 FILTER_KEYS = ("q", "show", "step", "specialty", "country")
+SENDS_PER_PAGE = 20  # outreach log: emails sent
+EVENTS_PER_PAGE = 25  # outreach log: everything that happened
 
 
 class RunState:
@@ -505,17 +508,35 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
                         reviewer=reviewer)
 
     @app.get("/log", response_class=HTMLResponse)
-    def log_page(request: Request):
+    def log_page(request: Request, sent: str = "1", events: str = "1"):
+        """Two long tables, each in pages: ?sent=2 for the emails, ?events=3 for everything that happened."""
         conn = connect(settings.db_path)
         try:
+            emails = pager(conn.execute("SELECT COUNT(*) FROM outreach_log").fetchone()[0], sent, SENDS_PER_PAGE)
+            happened = pager(conn.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0], events, EVENTS_PER_PAGE)
+
+            def link(sent_page: int, events_page: int, anchor: str) -> str:
+                query = urlencode({k: v for k, v in (("sent", sent_page), ("events", events_page)) if v > 1})
+                return f"/log{'?' + query if query else ''}#{anchor}"
+
+            # Turning one table's page keeps the other where it was.
+            emails["prev"] = link(emails["page"] - 1, happened["page"], "sent") if emails["page"] > 1 else None
+            emails["next"] = link(emails["page"] + 1, happened["page"], "sent") if emails["page"] < emails["pages"] else None
+            happened["prev"] = link(emails["page"], happened["page"] - 1, "events") if happened["page"] > 1 else None
+            happened["next"] = (link(emails["page"], happened["page"] + 1, "events")
+                                if happened["page"] < happened["pages"] else None)
             return render(
                 request, "log.html", conn,
-                sends=[dict(r) for r in conn.execute("SELECT * FROM outreach_log ORDER BY sent_at DESC, id DESC")],
+                sends=[dict(r) for r in conn.execute(
+                    "SELECT * FROM outreach_log ORDER BY sent_at DESC, id DESC LIMIT ? OFFSET ?",
+                    (emails["size"], emails["offset"]))],
+                sends_pager=emails,
                 alerts=[dict(r) for r in conn.execute(
                     "SELECT * FROM audit_log WHERE event = 'alert.raised' ORDER BY id DESC")],
                 events=[dict(r) for r in conn.execute(
                     """SELECT a.*, l.full_name FROM audit_log a LEFT JOIN leads l ON l.id = a.lead_id
-                       ORDER BY a.id DESC LIMIT 150""")],
+                       ORDER BY a.id DESC LIMIT ? OFFSET ?""", (happened["size"], happened["offset"]))],
+                events_pager=happened,
                 suppressed=[dict(r) for r in conn.execute("SELECT * FROM suppression ORDER BY added_at")],
             )
         finally:
