@@ -26,7 +26,18 @@ def test_a_fresh_online_server_starts_from_the_snapshot(settings, services, tmp_
     assert "Online prototype with made-up data" in page
     assert "19 of 24 doctors fit the campaign" in page
 
+    # Approve one email, so there's a change to undo.
+    online_db = connect(online.db_path)
+    draft = online_db.execute("SELECT id, subject, body FROM drafts WHERE status = 'PENDING_APPROVAL' LIMIT 1").fetchone()
+    online_db.close()
+    client.post(f"/drafts/{draft['id']}/approve",
+                data={"reviewer": "Lat", "subject": draft["subject"], "body": draft["body"]})
+    assert "Review 9 emails" in client.get("/").text
+
+    # Online, Reset goes back to the snapshot rather than an empty list (there's no AI model to rebuild it).
     client.post("/reset")
+    assert "Review 10 emails" in client.get("/").text
+
     finished = client.post("/run")  # follows the redirect to the Run page
     assert "Run finished" in finished.text and "Qualified doctor: 19 of 24" in finished.text
 

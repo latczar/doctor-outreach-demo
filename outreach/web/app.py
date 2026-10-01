@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
-import shutil
+import sqlite3
 import threading
 from collections import Counter
 from pathlib import Path
@@ -101,6 +101,16 @@ def filter_leads(leads: list[dict], q: str = "", show: str = "", step: str = "",
     return leads, heading
 
 
+def restore_snapshot(settings: Settings) -> None:
+    """Load the snapshot of a real run into the database, with SQLite's own backup, so it's safe while running."""
+    source, target = sqlite3.connect(settings.snapshot_path), connect(settings.db_path)
+    try:
+        source.backup(target)
+    finally:
+        source.close()
+        target.close()
+
+
 def safe_path(path: str | None) -> str:
     """Only paths on this site, so a link can't send someone elsewhere."""
     return path if path and path.startswith("/") and not path.startswith("//") else "/"
@@ -110,10 +120,10 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
     settings = settings or get_settings()
     campaign = load_campaign(settings.campaign_path)
     notifier = make_notifier(settings)
-    if settings.demo_online and not settings.db_path.exists() and settings.snapshot_path.exists():
+    online_snapshot = settings.demo_online and settings.snapshot_path.exists()
+    if online_snapshot and not settings.db_path.exists():
         # A fresh online server starts from a snapshot of a real run, so the first drafts are real AI output.
-        settings.db_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(settings.snapshot_path, settings.db_path)
+        restore_snapshot(settings)
     app = FastAPI(title="Doctor outreach demo")
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
@@ -231,14 +241,18 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
     def reset():
         if state.running:
             return redirect("/", "Wait for the current run to finish first.", "warn")
+        for eml in settings.outbox_dir.glob("*.eml"):
+            eml.unlink()
+        state.lines, state.error = [], None
+        if online_snapshot:
+            # Online, the local AI model isn't available, so go back to the real drafts rather than an empty list.
+            restore_snapshot(settings)
+            return redirect("/", "Demo reset to the starting snapshot, with the real AI drafts.")
         conn = connect(settings.db_path)
         try:
             reset_data(conn, settings.seed_dir)
         finally:
             conn.close()
-        for eml in settings.outbox_dir.glob("*.eml"):
-            eml.unlink()
-        state.lines, state.error = [], None
         return redirect("/", "Demo reset. Click Run the pipeline to start again.")
 
     # --- doctors, the final list and its downloads -----------------------------------

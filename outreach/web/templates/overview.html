@@ -40,7 +40,7 @@
 </div>
 <p class="actions-help">
   <strong>Run the pipeline</strong> reads the research list, runs the rule steps, then has the AI write an email for each doctor cleared to contact. Nothing is sent: that waits for a person to approve and click Send. Running it again only picks up new rows.
-  <strong>Reset demo</strong> empties everything, so you can start from the beginning.
+  {% if demo_online %}<strong>Reset demo</strong> goes back to the starting snapshot, with the real AI drafts.{% else %}<strong>Reset demo</strong> empties everything, so you can start from the beginning.{% endif %}
 </p>
 
 {% if not counts %}

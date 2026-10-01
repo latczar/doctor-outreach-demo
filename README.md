@@ -38,7 +38,9 @@ The same app runs on Vercel's free tier as an online prototype, so others can cl
   - a fresh server starts from `data/demo-snapshot.db`, a snapshot of a real run with the local model, so the first drafts are real AI output;
   - new drafts use the template writer, because the local model isn't online;
   - runs finish in one go, because an online server can pause between requests.
-- Data resets when the server restarts, and a banner says so.
+- Data resets when the server restarts, and Reset demo goes back to the snapshot rather than an empty list. A banner says so.
+
+Live copy: https://doctor-outreach-demo-two.vercel.app (pushes to `main` redeploy it).
 
 To update it: `vercel deploy --prod`. To rebuild the snapshot, run the pipeline locally with `DATABASE_PATH=data/demo-snapshot.db`.
 
