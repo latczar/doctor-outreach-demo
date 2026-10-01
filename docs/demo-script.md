@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `132 passed`.
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `137 passed`.
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -15,7 +15,7 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 ## The walkthrough (about 5 minutes)
 
 1. **Start here.** Read the four lines on the overview: rules check the list, the system writes, you approve, each email goes once and is logged. "Your team does this by hand today."
-2. **Click Run the pipeline.** The Run page reports each step as it finishes: "Qualified doctor: 19 of 24 doctors fit the campaign." While the system writes the drafts (about 1 to 2 minutes locally), point at the urgent alert line: a scraped profile tried to give the system instructions, so the team was told.
+2. **Click Run the pipeline.** The Run page reports each step as it finishes: "Qualified doctor: 19 of 24 doctors fit the campaign." While the system writes the drafts (about 1 to 2 minutes locally), point at the urgent alert line: a scraped profile tried to give the system instructions, so the team was told. When it finishes, click **Watch the replay**, press F for full screen and Space to play: "Here's that run again, from the audit log. The rules sort 27 rows in under a second, then each draft is written and checked." The by-hand bar is your estimate (5 to 10 minutes a doctor), so say so.
 3. **Click See the overview.** "This is what needs me today": the to-do list. Then the steps: "27 rows became 24 doctors", "19 of 24 fit the campaign". Click **See who, and why** under Email verified? for the 4 doctors stopped there. Tap the small "i" after "catch-all".
 4. **Click Open the final list.** Search "price": Daniel Price's email was guessed from his trust's pattern, then verified. Filter to Cardiology and click **Copy for Google Sheets**: "Paste into cell A1 and the columns line up."
 5. **Open the Not on the list tab and click Rachel Moore.** Her tracker stops at Not previously contacted?: "A new email, but caught on her registration number."
@@ -32,7 +32,7 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 
 ## How I tested it (a good story to tell)
 
-- 132 automated tests run in about 14 seconds with a fake model, so they never call an AI.
+- 137 automated tests run in about 14 seconds with a fake model, so they never call an AI.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.
   2. Telling a small model "don't write 'I hope you are well'" made it write exactly that. I reworded it positively, and code now deletes that filler sentence and logs it, rather than retrying.
@@ -118,6 +118,9 @@ Not directly. They supply the fact the rules were missing, or confirm the one th
 
 **Can it send real email?**
 Yes, on my laptop. Every approved email goes to my own inbox instead of the doctor's made-up address, with a line saying who it was for. Two guards stop it reaching a doctor: the redirect in the code, and Resend's test mode, which only delivers to my address. The online copy can't send at all.
+
+**Is the replay real or a recording?**
+Real. The page rebuilds the last run from the audit log each time it loads, so the counts and times are the ones that happened. Only the by-hand bar is an estimate, and it says so. It only reads: it never drafts or sends anything.
 
 **Why not LangChain or an agent?**
 The steps are known in advance, so a fixed pipeline is simpler, cheaper and predictable. An agent would add freedom this job doesn't need. Each step here is a function with tests.

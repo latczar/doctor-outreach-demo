@@ -109,14 +109,15 @@ outreach/
   override.py            a person decides what the rules couldn't, then the rules run again
   pipeline.py            runs the steps in order and works out the funnel
   llm/                   fake, ollama, anthropic behind one small interface
-  web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, phone view
+  web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, replay, phone view
     present.py           plain English for the screens: the three lists, trackers, highlights, the small "i" explanations
-tests/                   132 tests, one file per step plus end-to-end, screen, alert, decision and web tests
+    replay.py            the replay page: the last run, rebuilt from the audit log
+tests/                   137 tests, one file per step plus end-to-end, screen, alert, decision and web tests
 ```
 
 Python, FastAPI, SQLite and server-rendered pages, styled with patterns from the GOV.UK Design System in our own look. No LangChain, no agents, no queue: each step is a function you can point at and test.
 
-The screens: **Overview** (your to-do list, then each step as "19 of 24 doctors fit the campaign"), **Doctors** (search, filters, a tracker per doctor, a Decide button for doctors the rules couldn't place, Download CSV or Copy for Google Sheets), **Review emails** (one at a time), **Outreach log**, a **Run** page that reports progress, and a **phone view**. Light by default, with a dark switch.
+The screens: **Overview** (your to-do list, then each step as "19 of 24 doctors fit the campaign"), **Doctors** (search, filters, a tracker per doctor, a Decide button for doctors the rules couldn't place, Download CSV or Copy for Google Sheets), **Review emails** (one at a time), **Outreach log**, a **Run** page that reports progress, a **Replay** page that plays the last run back from the audit log (Space plays, F is full screen), and a **phone view**. Light by default, with a dark switch.
 
 ## Honest limitations
 

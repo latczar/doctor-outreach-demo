@@ -72,8 +72,10 @@ def record_gate(conn: sqlite3.Connection, lead: dict, stage: str, result: GateRe
         fields["status"] = result.status
     with transaction(conn):
         update_lead(conn, lead["id"], **fields)
+        # The status goes in the log too, so the replay page can show why a doctor stopped at the time.
         audit(conn, f"{stage}.{'passed' if result.passed else 'stopped'}", lead_id=lead["id"],
-              detail={"reason": result.reason, **result.evidence})
+              detail={"reason": result.reason, **result.evidence,
+                      **({} if result.passed else {"status": str(result.status)})})
     lead.update(fields)
 
 

@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 
 from ..config import Settings, get_settings
 from ..db import connect, get_lead, loads
-from ..drafting import doctor_profile, draft_context
+from ..drafting import Prompts, doctor_profile, draft_context
 from ..export import export_csv, export_tsv
 from ..guardrails import looks_like_injection, personal_overlap
 from ..llm import LLM, LLMError, describe, make_llm
@@ -49,6 +49,7 @@ from .present import (
     where_now,
     who,
 )
+from .replay import build_replay
 
 HERE = Path(__file__).parent
 THEMES = ("light", "dark")
@@ -525,6 +526,16 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         if mode in THEMES:
             response.set_cookie("theme", mode, max_age=60 * 60 * 24 * 365, samesite="lax")
         return response
+
+    @app.get("/replay", response_class=HTMLResponse)
+    def replay_page(request: Request):
+        """The last run, played back from the audit log. It reads only: nothing is drafted or sent."""
+        conn = connect(settings.db_path)
+        try:
+            replay = build_replay(conn, campaign, Prompts.load(settings.prompts_dir))
+            return render(request, "replay.html", conn, replay=replay)
+        finally:
+            conn.close()
 
     @app.get("/phone", response_class=HTMLResponse)
     def phone(request: Request, path: str = "/"):

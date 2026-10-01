@@ -184,6 +184,7 @@ outreach/
   llm/                   fake, ollama, anthropic behind one interface
   web/                   dashboard, review page, doctor page, log
     present.py           turns stored data into plain English for the screens (makes no decisions)
+    replay.py            rebuilds the last run from the audit log for the replay page
 tests/                   one file per step, plus a full end-to-end run
 docs/                    this plan, the demo script, decisions
 ```
@@ -200,6 +201,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 | **Doctor page** | What happened to this doctor? | Tracker, step-by-step journey with reasons, every draft, history in plain words. For a doctor who needs you: a decision card (fix and re-check, or take off the list) |
 | **Outreach log** | What went out? | Every send, urgent alerts, the do-not-contact list, every event |
 | **Run page** | What is the pipeline doing now? | Each step's result as a sentence. The only page that refreshes itself |
+| **Replay** | What happened in the last run? | The run played back from the audit log in about 30 seconds: dots through the rule steps, one card per draft with each try, the time it took next to an estimate by hand, and how the system is used. It only reads. Space plays, R goes back to the start, P shows the prompt, F is full screen |
 | **Phone view** | Does it work on a phone? | The same app in a phone-sized frame (footer link) |
 
 **The tracker** is like a parcel tracker: green dot = passed, blue ring = waiting, amber dot = needs you, dark square = stopped here, empty dot = not reached.
@@ -214,7 +216,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 
 ### Why it's built this way (for the IT lead)
 
-- **Almost no JavaScript.** Filters and the theme switch are plain links and forms, folding sections are `<details>`, and each small "i" opens its explanation with the HTML `popover` attribute. The one script copies text to the clipboard on the Google Sheets page, and that page still works without it.
+- **Almost no JavaScript.** Filters and the theme switch are plain links and forms, folding sections are `<details>`, and each small "i" opens its explanation with the HTML `popover` attribute. Two small scripts: one copies text to the clipboard on the Google Sheets page, and one plays the replay. Both pages still work without them.
 - **No page reloads by itself except the Run page,** so a half-typed search or an open panel is never lost.
 - **Downloads match the screen:** the CSV and the Google Sheets copy use the same filter function as the Doctors page.
 - **Safe with web data.** Templates escape everything; the highlighter escapes each piece before adding its own tags; a test proves a hidden `<img onerror=...>` comes out as plain text.

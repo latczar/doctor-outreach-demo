@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% set active = "replay" %}
+{% block title %}Replay{% endblock %}
+{% block content %}
+{% if not replay %}
+<div class="pagehead">
+  <h1>Replay</h1>
+  <p class="lead">No run to replay yet. Click <strong>Run the pipeline</strong> on the <a href="/">overview</a>, then come back here.</p>
+</div>
+{% else %}
+{# Without JavaScript this page shows the finished run. replay.js hides it and plays it back step by step. #}
+<div class="replay" id="replay">
+  <div class="replay-head">
+    <div>
+      <h1>Replay: one run of the workflow</h1>
+      <p class="lead">Played back from the audit log of the run on {{ replay.recorded }}. Nothing runs again: no drafting and no emails.</p>
+    </div>
+    <div class="replay-keys" role="group" aria-label="Replay controls">
+      <button type="button" class="primary" data-action="play">Play again <kbd>Space</kbd></button>
+      <button type="button" data-action="start">Back to start <kbd>R</kbd></button>
+      {% if replay.example %}<button type="button" popovertarget="replay-prompt">Show prompt <kbd>P</kbd></button>{% endif %}
+      <button type="button" data-action="full">Full screen <kbd>F</kbd></button>
+    </div>
+  </div>
+
+  <section class="card rp-section">
+    <h2><span class="rp-num">1</span> The rules sort the list</h2>
+    <p class="muted">Each dot is a row of the research list. At each step, the grey dots stop, and the reason shows underneath.</p>
+    <ol class="rp-steps">
+      {% for step in replay.steps %}
+      <li class="rp-step">
+        <div class="rp-label"><strong>{{ step.label }}</strong><span class="rp-count">{{ step.left }}</span></div>
+        <div class="rp-dots" aria-hidden="true">{% for dot in step.dots %}<span class="dot {{ dot }}"></span>{% endfor %}</div>
+        <div class="rp-trays">{% for tray in step.trays %}<span class="tag {{ tray.tone }}">{{ tray.text }}</span>{% endfor %}</div>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="rp-result"><strong>Final list: {{ replay.final_list }} doctor{{ 's' if replay.final_list != 1 }} cleared to contact.</strong> The rules took {{ replay.rules_time }} for {{ replay.rows }} rows.</p>
+  </section>
+
+  {% if replay.cards %}
+  <section class="card rp-section">
+    <h2><span class="rp-num">2</span> The system writes, and code checks every draft</h2>
+    <p class="muted">One card per doctor on the final list. A failed check sends the draft back with the reason, up to 3 tries.{% if replay.writer %} Drafting: {{ replay.writer }}.{% endif %}</p>
+    <ul class="rp-cards">
+      {% for card in replay.cards %}
+      <li class="rp-card {{ 'good' if card.passed else 'warn' }}{{ ' flagged' if card.obeyed }}">
+        <div class="rp-card-head"><strong>{{ card.name }}</strong><span class="muted small">{{ card.specialty }}</span></div>
+        <ol class="rp-tries">
+          {% for t in card.attempts %}
+          <li class="{{ 'pass' if t.passed else 'fail' }}"><span class="rp-try">Try {{ t.n }}</span><span class="rp-time">{{ t.time }}</span><span>{{ 'passed every check' if t.passed else t.failed | join(', ') }}</span></li>
+          {% endfor %}
+        </ol>
+        <p class="rp-outcome">{{ card.outcome }}</p>
+        {% if card.obeyed %}<p class="rp-flag">Its profile hides an instruction. The checks stopped the draft that obeyed it.</p>
+        {% elif card.injection %}<p class="rp-flag">Its profile hides an instruction. The checks guard the email.</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="card rp-section">
+    <h2><span class="rp-num">3</span> How long it took</h2>
+    <div class="rp-bars">
+      <div class="rp-bar">
+        <span class="rp-bar-label">The rules, {{ replay.rows }} rows</span>
+        <span class="rp-track"><span class="rp-fill" style="--w: {{ replay.bars.rules }}%"></span></span>
+        <span class="rp-bar-time">{{ replay.rules_time }}</span>
+      </div>
+      <div class="rp-bar">
+        <span class="rp-bar-label">Writing and checking {{ replay.tries }} drafts</span>
+        <span class="rp-track"><span class="rp-fill" style="--w: {{ replay.bars.drafting }}%"></span></span>
+        <span class="rp-bar-time">{{ replay.drafting_time }}</span>
+      </div>
+      <div class="rp-bar by-hand">
+        <span class="rp-bar-label">By hand, {{ replay.unique }} doctors</span>
+        <span class="rp-track"><span class="rp-fill" style="--w: 100%; --low: {{ replay.bars.hand_low }}%"></span></span>
+        <span class="rp-bar-time">{{ replay.by_hand.text }}</span>
+      </div>
+    </div>
+    <p class="muted small">By hand is an estimate: {{ replay.by_hand.minutes[0] }} to {{ replay.by_hand.minutes[1] }} minutes a doctor to research them, find and check the email, check past contact and write the email. A person still reviews every email the system writes; that part doesn't change.</p>
+  </section>
+
+  {% if replay.example %}
+  {% set ex = replay.example %}
+  <section class="card rp-section">
+    <h2>How the system is used here</h2>
+    <p class="muted">It never decides who is contacted. It gets one doctor's facts, writes one draft, and code checks the draft before a person sees it. This is {{ ex.name }}'s, from the run.</p>
+    <div class="rp-how">
+      <div>
+        <svg class="rp-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="3" y="3" width="58" height="32" rx="6"/><path d="M14 35v10l10-10"/><path d="M14 15h36M14 24h24"/></svg>
+        <h3>1. The facts</h3>
+        <p>Only what it needs: no email address and no registration number.</p>
+        <pre>{{ ex.facts }}</pre>
+      </div>
+      <div>
+        <svg class="rp-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="3" y="3" width="58" height="11" rx="4"/><rect x="3" y="18" width="58" height="11" rx="4"/><path d="M14 40h2M30 40h2M46 40h2"/></svg>
+        <h3>2. One job</h3>
+        <p>Write one email from these facts, as a subject, a body and the detail it used.</p>
+        <pre>{{ ex.reply }}</pre>
+      </div>
+      <div>
+        <svg class="rp-icon" viewBox="0 0 64 48" aria-hidden="true"><rect x="3" y="3" width="58" height="11" rx="4"/><rect class="hit" x="3" y="18" width="58" height="11" rx="4"/><path d="M3 41h58"/></svg>
+        <h3>3. Checks, then a person</h3>
+        <ul class="rp-checklist">{% for c in ex.checks %}<li><span class="tick" aria-hidden="true">✓</span>{{ c }}</li>{% endfor %}</ul>
+        <p>Then it waits for a person to approve it.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="replay-prompt" class="info-pop prompt-pop" popover>
+    <p><strong>The prompt for {{ ex.name }}</strong></p>
+    <p class="muted small">Exactly what the drafting step received. The doctor's details sit inside a fenced block, so any text in a profile is treated as data, not as instructions.</p>
+    <h3>Instructions</h3>
+    <pre>{{ ex.system }}</pre>
+    <h3>Request</h3>
+    <pre>{{ ex.request }}</pre>
+    <button type="button" popovertarget="replay-prompt" popovertargetaction="hide">Close</button>
+  </div>
+  {% endif %}
+</div>
+<script src="/static/replay.js" defer></script>
+{% endif %}
+{% endblock %}
