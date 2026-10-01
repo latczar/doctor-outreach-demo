@@ -206,7 +206,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 
 **Three lists instead of sixteen statuses:** every doctor is in exactly one. On the final list (cleared to contact), Needs you (the rules couldn't decide), Not on the list (stopped by a rule or a person).
 
-**Deciding on a doctor who needs you:** the person never skips the rules. They supply the missing fact (a name, a grade from the list, a better email) or confirm a catch-all mailbox, and the rules run again from the top; if the doctor passes, the AI writes their email straight away. Or they take the doctor off the list. Both need a note and a name, and both go in the history (`override.py`).
+**Deciding on a doctor who needs you:** the person never skips the rules. They supply the missing fact (a name, a grade from the list, a better email) or confirm a catch-all mailbox, and the rules run again from the top; if the doctor passes, the system writes their email straight away. Or they take the doctor off the list. Both need a note and a name, and both go in the history (`override.py`).
 
 **On a phone:** every field has its explanation in a hint above it, not as placeholder text inside it (the GOV.UK advice), so nothing is cut off or disappears when you type. The menu becomes a 2x2 grid, buttons go full width, and the overview hides each step's "how it decides" line to keep it short.
 

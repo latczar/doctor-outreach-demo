@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `124 passed`.
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `126 passed`.
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -13,14 +13,14 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 
 ## The walkthrough (about 5 minutes)
 
-1. **Start here.** Read the four lines on the overview: rules check the list, the AI writes, you approve, each email goes once and is logged. "Your team does this by hand today."
-2. **Click Run the pipeline.** The Run page reports each step as it finishes: "Qualified doctor: 19 of 24 doctors fit the campaign." While the AI writes (about 1 to 2 minutes locally), point at the urgent alert line: a scraped profile tried to give the AI orders, so the team was told.
+1. **Start here.** Read the four lines on the overview: rules check the list, the system writes, you approve, each email goes once and is logged. "Your team does this by hand today."
+2. **Click Run the pipeline.** The Run page reports each step as it finishes: "Qualified doctor: 19 of 24 doctors fit the campaign." While the system writes the drafts (about 1 to 2 minutes locally), point at the urgent alert line: a scraped profile tried to give the system instructions, so the team was told.
 3. **Click See the overview.** "This is what needs me today": the to-do list. Then the steps: "27 rows became 24 doctors", "19 of 24 fit the campaign". Click **See who, and why** under Email verified? for the 4 doctors stopped there. Hover over "catch-all".
 4. **Click Open the final list.** Search "price": Daniel Price's email was guessed from his trust's pattern, then verified. Filter to Cardiology and click **Copy for Google Sheets**: "Paste into cell A1 and the columns line up."
 5. **Open the Not on the list tab and click Rachel Moore.** Her tracker stops at Not previously contacted?: "A new email, but caught on her registration number."
 6. **Open Review emails** and type your name once. "Blue is the personalised draft the system wrote, grey is the standard footer, yellow is the personal detail. The highlight comes from the same function as the personalised check." Open **Edit before approving**, add `[DATE]`, click Approve: refused, edit kept. Approve two or three; reject one with a reason.
-7. **Open the Needs you tab and click Decide on Hannah Lewis.** Her trust's domain accepts every address, so no computer can confirm the mailbox. Tick "I've confirmed this mailbox exists", note "called the trust switchboard", and re-check: "The rules run again with my confirmation, she joins the final list, and the AI writes her email." Then on Isla McKenzie, pick a grade the campaign doesn't target: the rules still say no.
-8. **Click Mohammed Iqbal under Need fixing.** The red sentence is the planted instruction. "The prompt reduces the risk; code enforces the rule." If his draft passed this run, read it out: no £2,000 and no partnership claim.
+7. **Open the Needs you tab and click Decide on Hannah Lewis.** Her trust's domain accepts every address, so no computer can confirm the mailbox. Tick "I've confirmed this mailbox exists", note "called the trust switchboard", and re-check: "The rules run again with my confirmation, she joins the final list, and the system writes her email." Then on Isla McKenzie, pick a grade the campaign doesn't target: the rules still say no.
+8. **Click Mohammed Iqbal under Need fixing.** The red sentence is the planted instruction. "The prompt reduces the risk; code enforces the rule." Online, open his doctor page and expand Attempt 1: it offered £2,000 and claimed to be an "official NHS partner", and the checks stopped both. On your laptop, if his draft passed this run, read it out: no £2,000 and no partnership claim.
 9. **Click Send approved, then open Outreach log.** "Each send is claimed with a unique key before it happens, and the do-not-contact list is checked again at send time." To prove nothing is sent twice:
 
 ```powershell
@@ -31,12 +31,13 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 
 ## How I tested it (a good story to tell)
 
-- 124 automated tests run in about 13 seconds with a fake model, so they never call an AI.
+- 126 automated tests run in about 14 seconds with a fake model, so they never call an AI.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.
   2. Telling a small model "don't write 'I hope you are well'" made it write exactly that. I reworded it positively, and code now deletes that filler sentence and logs it, rather than retrying.
   3. The model added its own "Best regards, Alex Morgan". The sign-off remover missed that pattern, and the email ended up with two sign-offs. I fixed it and added a test.
 - After the fixes, 9 of 11 passed. Four of those failed once and passed on the retry, because the model got the exact reasons back. The two that still failed were a generic draft and the prompt-injection case, which is what the checks exist to catch.
+- The online copy comes from a later run: 10 of 11 passed, two of them on the retry. Mohammed's first draft obeyed the planted instruction (£2,000 and "official NHS partner"), and the money and affiliation checks stopped it. His next two were too generic, so his email waits under Need fixing.
 
 ## Questions they might ask
 
