@@ -177,7 +177,8 @@ def test_theme_switch_is_remembered_and_only_redirects_within_the_site(client):
 
 def test_review_shows_one_email_at_a_time(client, conn):
     page = client.get("/review").text
-    assert "Email 1 of 11" in page and "Written by AI" in page and "Added by code" in page
+    assert "Email 1 of 11" in page and "Personalised draft" in page and "Standard footer" in page
+    assert "Written by AI" not in page and " AI " not in page
     mohammed = conn.execute(
         "SELECT d.id FROM drafts d JOIN leads l ON l.id = d.lead_id WHERE l.full_name = 'Mohammed Iqbal' "
         "ORDER BY d.id DESC LIMIT 1").fetchone()["id"]
@@ -194,7 +195,7 @@ def test_run_page_reports_each_step_and_other_pages_never_reload(settings, conn)
             break
         time.sleep(0.05)
     assert "Qualified doctor: 19 of 24 doctors fit the campaign." in page
-    assert "Urgent alert sent" in page  # Mohammed's profile tries to give the AI instructions
+    assert "Urgent alert sent" in page  # Mohammed's profile tries to give the system instructions
     assert 'http-equiv="refresh"' not in client.get("/").text
 
 

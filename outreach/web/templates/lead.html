@@ -97,7 +97,7 @@
       {% if salutation %}<div><dt>Greeting</dt><dd>Dear {{ salutation }},</dd></div>{% endif %}
       <div><dt>Source</dt><dd>{{ lead.source }}</dd></div>
       <div><dt>Profile notes</dt><dd class="notes">{{ notes_html or 'None' }}
-        {% if injection %}<span class="muted small">The red text tries to give the AI orders. It is passed to the AI as data only.</span>{% endif %}</dd></div>
+        {% if injection %}<span class="muted small">The red text tries to give the system orders. It is treated as data only.</span>{% endif %}</dd></div>
     </dl>
     {% if lead.duplicate_of %}
       <p>This row is a copy of <a href="/leads/{{ lead.duplicate_of }}">#{{ lead.duplicate_of }}</a>.</p>
@@ -139,8 +139,8 @@
           {% if d.subject %}
           <div class="email-preview">
             <div class="subject"><span class="muted small">Subject</span> {{ d.subject }}</div>
-            <div class="part ai"><span class="part-label">Written by AI</span><div class="text">{{ d.body }}</div></div>
-            <div class="part code"><span class="part-label">Added by code</span><div class="text">{{ d.footer }}</div></div>
+            <div class="part personal"><span class="part-label">Personalised draft</span><div class="text">{{ d.body }}</div></div>
+            <div class="part standard"><span class="part-label">Standard footer, the same on every email</span><div class="text">{{ d.footer }}</div></div>
           </div>
           {% endif %}
         </details>

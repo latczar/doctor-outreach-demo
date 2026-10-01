@@ -22,8 +22,8 @@ class TemplateLLM:
     obeys everything would. That lets the checks show what they catch without a real model.
     """
 
-    name = "fake"
-    model = "template"
+    name = "template writer"  # shown on screen as "Draft 1, written by template writer"
+    model = ""
 
     def generate_json(self, system: str, prompt: str, schema: dict) -> LLMReply:
         facts = _block(prompt, "campaign_facts")

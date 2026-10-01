@@ -259,10 +259,10 @@ details.all-checks .checks { margin-top: 8px; }
 .email-preview { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
 .email-preview .subject { padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 600; }
 .email-preview .part { padding: 10px 12px 12px 14px; border-left: 4px solid; }
-.email-preview .part.ai { border-left-color: var(--waiting); background: var(--waiting-soft); }
-.email-preview .part.code { border-left-color: var(--line-strong); background: var(--bg); color: var(--muted); }
+.email-preview .part.personal { border-left-color: var(--waiting); background: var(--waiting-soft); }
+.email-preview .part.standard { border-left-color: var(--line-strong); background: var(--bg); color: var(--muted); }
 .part-label { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; color: var(--muted); }
-.part.ai .part-label { color: var(--waiting); }
+.part.personal .part-label { color: var(--waiting); }
 .email-preview .text { white-space: pre-wrap; font-size: 0.92rem; }
 .draft form { margin: 0; }
 .draft label { display: block; margin-bottom: 10px; }

@@ -196,7 +196,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 |---|---|---|
 | **Overview** | What needs me, and how was the list built? | The to-do list first. Then each step as a task list: "19 of 24 doctors fit the campaign", a status (Done, Needs you, Waiting for you, Cannot start yet), how the step decides, and who didn't get through. The final list sits after step 5 |
 | **Doctors** | Who is on the list, and why? | Search, filters (specialty, country), three tabs (On the final list, Needs you, Not on the list), a tracker and one plain sentence per doctor. Download CSV or Copy for Google Sheets exports exactly what's on screen |
-| **Review emails** | Is this email right? | One email at a time, with the queue beside it. Blue = written by the AI, grey = added by code, yellow = the personal detail, red = text that tries to give the AI orders |
+| **Review emails** | Is this email right? | One email at a time, with the queue beside it. Blue = Personalised draft, grey = Standard footer (the same on every email), yellow = the personal detail, red = text that tries to give the system orders. The screens say "the system" rather than AI |
 | **Doctor page** | What happened to this doctor? | Tracker, step-by-step journey with reasons, every draft, history in plain words. For a doctor who needs you: a decision card (fix and re-check, or take off the list) |
 | **Outreach log** | What went out? | Every send, urgent alerts, the do-not-contact list, every event |
 | **Run page** | What is the pipeline doing now? | Each step's result as a sentence. The only page that refreshes itself |

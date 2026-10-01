@@ -39,8 +39,8 @@
   </form>
 </div>
 <p class="actions-help">
-  <strong>Run the pipeline</strong> reads the research list, runs the rule steps, then has the AI write an email for each doctor cleared to contact. Nothing is sent: that waits for a person to approve and click Send. Running it again only picks up new rows.
-  {% if demo_online %}<strong>Reset demo</strong> goes back to the starting snapshot, with the real AI drafts.{% else %}<strong>Reset demo</strong> empties everything, so you can start from the beginning.{% endif %}
+  <strong>Run the pipeline</strong> reads the research list, runs the rule steps, then has the system write a personalised email for each doctor cleared to contact. Nothing is sent: that waits for a person to approve and click Send. Running it again only picks up new rows.
+  {% if demo_online %}<strong>Reset demo</strong> goes back to the starting snapshot, with the original drafts.{% else %}<strong>Reset demo</strong> empties everything, so you can start from the beginning.{% endif %}
 </p>
 
 {% if not counts %}
@@ -48,8 +48,8 @@
     <h2>Start here</h2>
     <p>This tool turns a raw research list into a checked list of doctors, writes a personal email for each one, and sends only what a person approves.</p>
     <ol class="steps-plain">
-      <li><strong>Rules check the list.</strong> Copies of the same doctor are merged. Then each doctor must fit the campaign, have a verified email, and not have been contacted recently. No AI makes these decisions.</li>
-      <li><strong>The AI writes an email for each doctor on the final list.</strong> Code checks every draft before you see it.</li>
+      <li><strong>Rules check the list.</strong> Copies of the same doctor are merged. Then each doctor must fit the campaign, have a verified email, and not have been contacted recently. Plain rules make these decisions.</li>
+      <li><strong>The system writes an email for each doctor on the final list.</strong> Every draft is checked before you see it.</li>
       <li><strong>You approve each email,</strong> edit it, or reject it. Nothing is sent without your name against it.</li>
       <li><strong>Approved emails are sent once and logged,</strong> so nobody is contacted twice by mistake.</li>
     </ol>
@@ -66,7 +66,7 @@
       <ul class="todo">
         {% if to_review %}
           <li><span class="todo-count">{{ to_review }}</span>
-            <span class="todo-text"><strong>Review {{ to_review }} email{{ 's' if to_review != 1 }}</strong><span>Written by the AI. Approve, edit or reject each one.</span></span>
+            <span class="todo-text"><strong>Review {{ to_review }} email{{ 's' if to_review != 1 }}</strong><span>Drafted by the system. Approve, edit or reject each one.</span></span>
             <a class="button primary" href="/review">Review</a></li>
         {% endif %}
         {% if to_fix %}
@@ -128,7 +128,7 @@
 
   <section class="card">
     <h2>Writing and sending</h2>
-    <p class="muted">The AI writes, code checks, a person approves, then each email is sent once and logged.</p>
+    <p class="muted">The system drafts and checks each email, a person approves it, then it's sent once and logged.</p>
     <ol class="tasks">
       {% for step in view.steps[4:] %}{{ step_row(step, loop.index + 5) }}{% endfor %}
     </ol>

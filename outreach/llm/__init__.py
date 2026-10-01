@@ -27,7 +27,7 @@ def make_llm(settings: Settings) -> LLM:
 
 def describe(settings: Settings) -> str:
     return {
-        "fake": "fake (template writer, no AI)",
+        "fake": "template writer",
         "ollama": f"ollama ({settings.ollama_model}, local)",
         "anthropic": f"anthropic ({settings.anthropic_model})",
     }.get(settings.llm_provider, settings.llm_provider)

@@ -247,7 +247,7 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         if online_snapshot:
             # Online, the local AI model isn't available, so go back to the real drafts rather than an empty list.
             restore_snapshot(settings)
-            return redirect("/", "Demo reset to the starting snapshot, with the real AI drafts.")
+            return redirect("/", "Demo reset to the starting snapshot, with the original drafts.")
         conn = connect(settings.db_path)
         try:
             reset_data(conn, settings.seed_dir)

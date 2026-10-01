@@ -18,7 +18,7 @@
     </dl>
     <p class="legend small">
       <mark>Yellow</mark> words appear in both the profile and the email. That's the personal detail the check looked for.
-      {% if item.injection %}<br><mark class="danger">Red</mark> text tries to give the AI orders. It went to the AI as data only, and the checks decide what happens.{% endif %}
+      {% if item.injection %}<br><mark class="danger">Red</mark> text tries to give the system orders. It was treated as data only, and the checks decide what happens.{% endif %}
     </p>
   </div>
 
@@ -32,7 +32,7 @@
     <div class="checks-summary {{ 'fail' if item.failed else 'ok' }}">
       {% if item.failed %}{{ item.failed | length }} of {{ item.checks | length }} checks failed{% if mode == 'attention' %} on the last of {{ item.attempts }} attempts{% endif %}
       {% else %}All {{ item.checks | length }} checks passed{% endif %}
-      <span class="muted small">Attempt {{ d.attempt }} by {{ d.provider }}{% if d.model %} ({{ d.model }}){% endif %}, prompt {{ d.prompt_version }}</span>
+      <span class="muted small">Draft {{ d.attempt }}, written by {{ d.provider }}{% if d.model %} ({{ d.model }}){% endif %}</span>
     </div>
     {% if item.failed or item.fixes %}
       <ul class="checks list">
@@ -48,11 +48,11 @@
     {% if d.body %}
       <div class="email-preview">
         <div class="subject"><span class="muted small">Subject</span> {{ d.subject }}</div>
-        <div class="part ai"><span class="part-label">Written by AI</span><div class="text">{{ item.body_html }}</div></div>
-        <div class="part code"><span class="part-label">Added by code</span><div class="text">{{ d.footer }}</div></div>
+        <div class="part personal"><span class="part-label">Personalised draft</span><div class="text">{{ item.body_html }}</div></div>
+        <div class="part standard"><span class="part-label">Standard footer, the same on every email</span><div class="text">{{ d.footer }}</div></div>
       </div>
     {% else %}
-      <p class="muted">There is no draft text, because the AI model couldn't be reached. Write one below, or ask for another draft.</p>
+      <p class="muted">There is no draft text, because the drafting step couldn't run. Write one below, or ask for another draft.</p>
     {% endif %}
 
     <form method="post" action="/drafts/{{ d.id }}/approve">
@@ -102,7 +102,7 @@
 {% block content %}
 <div class="pagehead">
   <h1>Review emails</h1>
-  <p class="lead">Every email needs a named person to approve it. Your edits go through the same checks as the AI's drafts.</p>
+  <p class="lead">Every email needs a named person to approve it. Your edits go through the same checks as the system's drafts.</p>
 </div>
 
 <form class="card reviewer-bar" method="post" action="/reviewer">

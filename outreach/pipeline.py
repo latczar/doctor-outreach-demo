@@ -145,9 +145,9 @@ def run_pipeline(
             raise_alert(conn, services.notifier, Alert(
                 "suspicious_profile",
                 f"The profile for {lead['full_name']} (from the {(lead['source'] or 'web').lower()}) tries to give "
-                "the AI instructions. The checks guard the draft, but someone should look at the source.",
+                "the system instructions. The checks guard the draft, but someone should look at the source.",
                 lead["id"]))
-            progress(f"Urgent alert sent: the profile for {lead['full_name']} tries to give the AI instructions.")
+            progress(f"Urgent alert sent: the profile for {lead['full_name']} tries to give the system instructions.")
         progress(f"Writing email {i} of {len(ready)} with {services.llm.name}: {lead['full_name']}...", working=True)
         outcome = draft_for_lead(conn, lead, services.campaign, services.llm, services.prompts)
         if outcome.status == Status.PENDING_APPROVAL:

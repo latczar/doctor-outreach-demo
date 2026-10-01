@@ -210,7 +210,7 @@ def tidy(subject: str, body: str, sender_name: str = "") -> tuple[str, str, list
         break
     if removed_sign_off:
         body = "\n".join(lines).rstrip()
-        fixes.append("Removed the model's own sign-off, because we add ours.")
+        fixes.append("Removed the draft's own sign-off, because the standard footer adds one.")
 
     body, removed = FILLER.subn("", body)
     if removed:

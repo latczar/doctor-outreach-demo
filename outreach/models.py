@@ -82,7 +82,7 @@ STATUS_LABELS = {
 # The workflow from the brief, in its own wording. `key` matches a lead's `stage`.
 WORKFLOW = [
     {"key": "qualify", "label": "Qualified doctor",
-     "how": "Plain rules from the campaign file: country, specialty and grade. No AI.",
+     "how": "Plain rules from the campaign file: country, specialty and grade.",
      "summary": "{count} of {of} doctors fit the campaign"},
     {"key": "email_available", "label": "Email available?",
      "how": "Taken from the research list, or guessed from the employer's email pattern.",
@@ -95,7 +95,7 @@ WORKFLOW = [
             "matched by email or registration number.",
      "summary": "{count} of {of} haven't been contacted recently"},
     {"key": "draft", "label": "Personalised email",
-     "how": "The AI writes a draft. Code checks it and asks for a rewrite, up to 3 times.",
+     "how": "The system writes a personalised draft, checks it, and rewrites it up to 3 times if a check fails.",
      "summary": "{count} of {of} drafts passed every check"},
     {"key": "approval", "label": "Human approval",
      "how": "A named person approves, edits or rejects every email.",

@@ -212,7 +212,7 @@ def describe_event(event: str, actor: str, detail: dict) -> str:
         "demo.reset": "Demo reset: earlier outreach and the do-not-contact list loaded",
         "ingest.imported": "Imported from the research list",
         "ingest.duplicate": "Recognised as a duplicate and merged",
-        "draft.model_error": "The AI model couldn't be reached",
+        "draft.model_error": "The drafting step couldn't run",
         "draft.gave_up": "Draft failed every attempt, so it was handed to a person",
         "approval.approved": f"{person} approved the email" + (" after editing it" if detail.get("edited") else ""),
         "approval.rejected": f"{person} rejected the email",
@@ -272,7 +272,7 @@ def timeline(lead: dict, drafts: list[dict], sends: list[dict]) -> list[dict]:
                 state, text = "done", (f"Passed every check on attempt {passed_draft['attempt']} "
                                        f"({passed_draft['provider']}).")
             elif status == Status.READY_TO_DRAFT:
-                state, text = "waiting", "Waiting for the AI to write a draft."
+                state, text = "waiting", "Waiting for the system to write a draft."
             elif status == Status.DRAFT_FAILED:
                 state, text = "person", lead["reason"]
             elif drafts:

@@ -98,9 +98,9 @@ def recheck(
                              actor=f"reviewer:{reviewer}")
     if outcome.status == Status.PENDING_APPROVAL:
         return OverrideOutcome(outcome.status,
-                               "Now on the final list. The AI wrote an email, and it's waiting for review.")
+                               "Now on the final list. The system wrote an email, and it's waiting for review.")
     return OverrideOutcome(outcome.status,
-                           "Now on the final list, but the AI's email failed our checks, so it needs fixing in Review.")
+                           "Now on the final list, but the drafted email failed our checks, so it needs fixing in Review.")
 
 
 def remove(conn: sqlite3.Connection, lead_id: int, reviewer: str, note: str) -> None:

@@ -40,7 +40,7 @@ The same app runs on Vercel's free tier as an online prototype, so others can cl
   - runs finish in one go, because an online server can pause between requests.
 - Data resets when the server restarts, and Reset demo goes back to the snapshot rather than an empty list. A banner says so.
 
-Live copy: https://doctor-outreach-demo-two.vercel.app (pushes to `main` redeploy it).
+Live copy: https://doctor-outreach.vercel.app (pushes to `main` redeploy it). The screens say "the system" rather than AI.
 
 To update it: `vercel deploy --prod`. To rebuild the snapshot, run the pipeline locally with `DATABASE_PATH=data/demo-snapshot.db`.
 

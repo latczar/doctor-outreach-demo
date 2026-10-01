@@ -29,7 +29,7 @@
     </div>
   </header>
   {% if demo_online %}
-    <div class="demo-banner">Online prototype with made-up data. New drafts come from a template writer, because the local AI model isn't online; the drafts loaded at the start were written by the real model. Changes reset when the server restarts.</div>
+    <div class="demo-banner">Online prototype with made-up data. New drafts here use a simple template, because the drafting engine runs on a local machine; the drafts loaded at the start are the real ones. Changes reset when the server restarts.</div>
   {% endif %}
   {% if run.running and active != 'run' %}
     <div class="run-banner"><span class="spinner"></span>The pipeline is running. <a href="/run">Watch its progress</a></div>
@@ -45,7 +45,7 @@
   </main>
   <footer class="foot">
     <p>Prototype with made-up data. Every address uses the reserved <code>.example</code> domain, and the send step refuses anything else.</p>
-    <p>AI model: {{ model }} · Sending to: {{ 'the outbox folder' if sender == 'outbox' else 'SMTP' }} <span class="wide-only">· <a href="/phone?path={{ here | urlencode }}">See this page at phone size</a></span></p>
+    <p>Drafting: {{ model }} · Sending to: {{ 'the outbox folder' if sender == 'outbox' else 'SMTP' }} <span class="wide-only">· <a href="/phone?path={{ here | urlencode }}">See this page at phone size</a></span></p>
   </footer>
 </body>
 </html>
