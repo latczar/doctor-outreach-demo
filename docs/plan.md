@@ -23,8 +23,9 @@ A messy research spreadsheet goes in. Plain rules filter it step by step, an AI 
 2. Click **Run pipeline**. The "Your workflow" boxes fill in: 27 rows, 24 unique doctors, 19 qualified, 18 with an email, 14 verified, 11 not contacted before, then drafts. Click any box to see who stopped there and why.
 3. Open **Review**. Read a draft next to the facts it was written from. Edit one, approve a few, reject one.
 4. Point at the doctor whose profile contained a hidden "ignore your instructions" line. The checks blocked that draft before it reached you.
-5. Click **Send approved**. On the laptop, each email lands in your own inbox, with a line saying which doctor it was for. It never reaches a doctor. Online, emails are saved to a folder instead.
-6. Open **Log**, then export the final list as a CSV for the team.
+5. Optional, on the laptop: open **Use your own research list**, upload a CSV of people who've agreed, and the same steps run on it.
+6. Click **Send approved**. On the laptop, each email lands in your own inbox, with a line saying which doctor it was for. It never reaches a doctor. Online, emails are saved to a folder instead.
+7. Open **Log**, then export the final list as a CSV for the team.
 
 ## 4. The pipeline, step by step
 
@@ -62,7 +63,7 @@ Each step is a small function that returns "passed", or "stopped, and here is wh
   2. It's a named person, not a shared inbox like `info@`.
   3. The domain accepts mail (it has an MX record).
   4. The mailbox exists.
-- **How:** a fake checker reads a local fixture file so the demo works offline. A real checker (ZeroBounce, NeverBounce) can replace it behind the same function.
+- **How:** made-up `.example` addresses are answered from a local fixture file, so the demo works offline. Real domains are looked up for real: does the domain have a mail server (an MX record)? No free check can confirm the mailbox itself, so a real address waits for a person to confirm it. A paid checker (ZeroBounce, NeverBounce) can replace that step behind the same function.
 - **If it fails:** a bad email is dropped with the reason. If the domain accepts every address (a "catch-all"), we can't confirm the mailbox, so a person decides: they confirm the mailbox themselves (for example by calling the trust) or give a better address, and the rules run again. A mailbox the mail server says doesn't exist can't be confirmed away.
 - **Interview line:** "Bounces damage your sender reputation, so anything we can't verify waits for a person rather than going out."
 
