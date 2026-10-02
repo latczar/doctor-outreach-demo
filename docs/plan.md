@@ -202,6 +202,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 | **Outreach log** | What went out? | The workflow's memory: every send (20 a page), urgent alerts, the do-not-contact list and everything that happened (25 a page). Each part says what it's for, and a key explains the statuses |
 | **Run page** | What is the pipeline doing now? | Each step's result as a sentence. The only page that refreshes itself |
 | **Replay** | What happened in the last run? | The run played back from the audit log in about 30 seconds: dots through the rule steps, one card per draft with each try, the time it took next to an estimate by hand, and how the system is used. It only reads. Space plays, R goes back to the start, P shows the prompt, F is full screen |
+| **Production architecture** | How would it run for real? | The same steps drawn in production: web app, database, worker, model, email checks, email service, alerts. Then a table of what changes from the prototype (footer link) |
 | **Phone view** | Does it work on a phone? | The same app in a phone-sized frame (footer link) |
 
 **The tracker** is like a parcel tracker: green dot = passed, blue ring = waiting, amber dot = needs you, dark square = stopped here, empty dot = not reached.

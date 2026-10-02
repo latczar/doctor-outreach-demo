@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set active = "architecture" %}
+{% block title %}Production architecture{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>How it would run in production</h1>
+  <p class="lead">The same steps and checks as this prototype. Each piece is swapped for its production version behind the interface it already has.</p>
+</div>
+
+<section class="card">
+  <h2>People approve in the web app, and a worker does the rest</h2>
+  <p class="muted small">Hosted in the UK or EU, behind company sign-in. Nothing reaches a doctor until a person has approved it.</p>
+  <div class="arch-wrap">
+  <svg class="arch" viewBox="0 64 760 548" role="img" aria-label="In production, people approve in the web app and a worker does the rest">
+    <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--line-strong)"/></marker></defs>
+    <rect class="zone" x="24" y="196" width="712" height="136" rx="8"/>
+    <text class="head" x="380" y="218" text-anchor="middle">Our service, hosted in the UK or EU</text>
+    <g class="link">
+      <path d="M140 152V228" marker-end="url(#arch-arrow)"/>
+      <path d="M620 152V228" marker-end="url(#arch-arrow)"/>
+      <path d="M240 272H280" marker-start="url(#arch-arrow)" marker-end="url(#arch-arrow)"/>
+      <path d="M520 272H480" marker-start="url(#arch-arrow)" marker-end="url(#arch-arrow)"/>
+      <path d="M620 316V392" marker-end="url(#arch-arrow)"/>
+      <path d="M620 360H133V392" marker-end="url(#arch-arrow)"/>
+      <path d="M380 360V392" marker-end="url(#arch-arrow)"/>
+      <path d="M256 360V520" marker-end="url(#arch-arrow)"/>
+      <path d="M620 480V520" marker-end="url(#arch-arrow)"/>
+    </g>
+    <rect class="box" x="24" y="80" width="232" height="72" rx="8"/>
+    <text class="head" x="140" y="104" text-anchor="middle">MedicPaths team</text>
+    <text class="line" x="140" y="120" text-anchor="middle">Reviewers, in a browser</text>
+    <text class="line" x="140" y="136" text-anchor="middle">Company sign-in (SSO)</text>
+    <rect class="box" x="504" y="80" width="232" height="72" rx="8"/>
+    <text class="head" x="620" y="104" text-anchor="middle">Research sources</text>
+    <text class="line" x="620" y="120" text-anchor="middle">The CRM or a shared sheet</text>
+    <text class="line" x="620" y="136" text-anchor="middle">or a CSV upload</text>
+    <text class="label" x="148" y="180">sign in, review, approve</text>
+    <text class="label" x="628" y="180">import rows</text>
+    <rect class="box main" x="40" y="228" width="200" height="88" rx="8"/>
+    <text class="head" x="140" y="252" text-anchor="middle">Web app</text>
+    <text class="line main" x="140" y="268" text-anchor="middle">Review, approve, decide</text>
+    <text class="line main" x="140" y="284" text-anchor="middle">Queues runs and sends</text>
+    <text class="line main" x="140" y="300" text-anchor="middle">Logs who did what</text>
+    <rect class="box" x="280" y="228" width="200" height="88" rx="8"/>
+    <text class="head" x="380" y="252" text-anchor="middle">Database (Postgres)</text>
+    <text class="line" x="380" y="268" text-anchor="middle">Doctors, drafts, sends, jobs</text>
+    <text class="line" x="380" y="284" text-anchor="middle">Audit log, do-not-contact</text>
+    <text class="line" x="380" y="300" text-anchor="middle">Backed up every day</text>
+    <rect class="box" x="520" y="228" width="200" height="88" rx="8"/>
+    <text class="head" x="620" y="252" text-anchor="middle">Worker</text>
+    <text class="line" x="620" y="268" text-anchor="middle">Takes jobs from the queue</text>
+    <text class="line" x="620" y="284" text-anchor="middle">Runs each step in order</text>
+    <text class="line" x="620" y="300" text-anchor="middle">Sends each email once</text>
+    <text class="label" x="380" y="352" text-anchor="middle">the worker calls these services</text>
+    <rect class="box" x="24" y="392" width="218" height="88" rx="8"/>
+    <text class="head" x="133" y="416" text-anchor="middle">Model API</text>
+    <text class="line" x="133" y="432" text-anchor="middle">Writes one draft per doctor</text>
+    <text class="line" x="133" y="448" text-anchor="middle">Sees only the profile fields</text>
+    <text class="line" x="133" y="464" text-anchor="middle">Under a data agreement</text>
+    <rect class="box" x="271" y="392" width="218" height="88" rx="8"/>
+    <text class="head" x="380" y="416" text-anchor="middle">Email checks</text>
+    <text class="line" x="380" y="432" text-anchor="middle">Finds and verifies addresses</text>
+    <text class="line" x="380" y="448" text-anchor="middle">Paid services, swapped in</text>
+    <text class="line" x="380" y="464" text-anchor="middle">behind the same interface</text>
+    <rect class="box" x="511" y="392" width="218" height="88" rx="8"/>
+    <text class="head" x="620" y="416" text-anchor="middle">Email service</text>
+    <text class="line" x="620" y="432" text-anchor="middle">MedicPaths' own domain</text>
+    <text class="line" x="620" y="448" text-anchor="middle">SPF, DKIM and DMARC set up</text>
+    <text class="line" x="620" y="464" text-anchor="middle">Bounces feed do-not-contact</text>
+    <text class="label" x="612" y="504" text-anchor="end">approved emails</text>
+    <rect class="box" x="24" y="520" width="465" height="72" rx="8"/>
+    <text class="head" x="256" y="544" text-anchor="middle">Alerts and monitoring</text>
+    <text class="line" x="256" y="560" text-anchor="middle">Urgent alerts: a webhook to n8n, then WhatsApp, Slack or Teams</text>
+    <text class="line" x="256" y="576" text-anchor="middle">Error tracking, uptime checks and a daily summary</text>
+    <rect class="box" x="511" y="520" width="218" height="56" rx="8"/>
+    <text class="head" x="620" y="544" text-anchor="middle">Doctors' inboxes</text>
+    <text class="line" x="620" y="560" text-anchor="middle">Only after a person approves</text>
+  </svg>
+  </div>
+</section>
+
+<section class="card">
+  <h2>What changes from this prototype</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Part</th><th>This prototype</th><th>Production</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Runs on</strong></td><td>One laptop, or Vercel for the demo</td><td>An always-on server or container in the UK or EU</td></tr>
+      <tr><td><strong>Database</strong></td><td>A SQLite file</td><td>Postgres, backed up every day</td></tr>
+      <tr><td><strong>Long jobs</strong></td><td>A background thread in the web app</td><td>A worker that takes jobs from a queue</td></tr>
+      <tr><td><strong>Drafting</strong></td><td>The local model (Ollama)</td><td>A hosted model under a data agreement, or our own GPU server</td></tr>
+      <tr><td><strong>Email checks</strong></td><td>Made-up fixtures</td><td>Paid verification and finder services, behind the same interface</td></tr>
+      <tr><td><strong>Sending</strong></td><td>Redirected to your inbox through Resend</td><td>MedicPaths' own domain, with SPF, DKIM and DMARC</td></tr>
+      <tr><td><strong>People</strong></td><td>A typed name</td><td>Company sign-in, with reviewer and admin roles</td></tr>
+      <tr><td><strong>Alerts</strong></td><td>A file</td><td>A webhook to n8n, then WhatsApp, Slack or Teams</td></tr>
+      <tr><td><strong>Watching it</strong></td><td>The audit log</td><td>The audit log, plus error tracking, uptime checks and a daily summary</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">The steps, rules and checks stay the same. The model, the email checks, the sender and the alerts each sit behind one small interface, so each can be swapped without touching the rest.</p>
+</section>
+{% endblock %}

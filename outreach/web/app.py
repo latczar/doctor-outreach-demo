@@ -549,6 +549,15 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
             response.set_cookie("theme", mode, max_age=60 * 60 * 24 * 365, samesite="lax")
         return response
 
+    @app.get("/architecture", response_class=HTMLResponse)
+    def architecture(request: Request):
+        """How the same steps would run in production, next to this prototype."""
+        conn = connect(settings.db_path)
+        try:
+            return render(request, "architecture.html", conn)
+        finally:
+            conn.close()
+
     @app.get("/replay", response_class=HTMLResponse)
     def replay_page(request: Request):
         """The last run, played back from the audit log. It reads only: nothing is drafted or sent."""

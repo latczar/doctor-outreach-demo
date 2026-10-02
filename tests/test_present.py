@@ -213,6 +213,13 @@ def test_the_log_explains_itself_and_pages_through_events(client):
     assert "page 1 of" in client.get("/log?events=nonsense").text  # a bad page number goes to the first page
 
 
+def test_the_architecture_page_puts_production_next_to_the_prototype(client):
+    page = client.get("/architecture").text
+    assert "How it would run in production" in page and "Postgres, backed up every day" in page
+    assert " AI " not in page
+    assert 'href="/architecture"' in client.get("/").text  # linked from every page's footer
+
+
 def test_phone_view_frames_the_same_app(client):
     page = client.get("/phone?path=/review").text
     assert '<iframe src="/review"' in page
