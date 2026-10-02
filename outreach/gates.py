@@ -8,7 +8,10 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Protocol
+
+import dns.exception
+import dns.resolver
 
 from .models import Campaign, GateResult, Status, Targeting
 from .normalise import ascii_lower, employer_key
@@ -122,6 +125,7 @@ class MailboxCheck:
     domain_accepts_mail: bool
     catch_all: bool
     mailbox_exists: bool | None  # None = can't tell
+    problem: str = ""  # set when the domain couldn't be checked at all, for example with no internet
 
 
 class EmailVerifier(Protocol):
@@ -148,6 +152,45 @@ class FixtureVerifier:
         return MailboxCheck(True, False, local in info["mailboxes"])
 
 
+class DomainCheckError(Exception):
+    """The domain couldn't be looked up just now, for example with no internet or a slow DNS server."""
+
+
+def mail_servers(domain: str) -> list[str]:
+    """The domain's mail servers, from its MX record. [] means it has none, so email to it would bounce."""
+    try:
+        answer = dns.resolver.resolve(domain, "MX", lifetime=5)
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+        return []
+    except dns.exception.DNSException as exc:
+        raise DomainCheckError(type(exc).__name__) from exc
+    # A "null MX" (a single "." record) is how a domain says it never accepts email.
+    return [host for host in (str(record.exchange).rstrip(".") for record in answer) if host]
+
+
+class DnsVerifier:
+    """Checks real domains for real: does the domain have a mail server?
+
+    Made-up domains (.example and .test) keep their fixture answers, so the demo data behaves the same
+    offline. No free check can confirm that a mailbox exists, so for a real address the mailbox comes back
+    as "can't tell", and a person confirms it on the doctor's page.
+    """
+
+    def __init__(self, fixture: EmailVerifier, made_up: tuple[str, ...] = (".example", ".test"),
+                 lookup: Callable[[str], list[str]] | None = None):
+        self.fixture, self.made_up, self.lookup = fixture, made_up, lookup
+
+    def check(self, email: str) -> MailboxCheck:
+        domain = email.partition("@")[2].lower()
+        if domain.endswith(self.made_up):
+            return self.fixture.check(email)
+        try:
+            servers = (self.lookup or mail_servers)(domain)
+        except DomainCheckError as exc:
+            return MailboxCheck(False, False, None, problem=f"the lookup failed: {exc}")
+        return MailboxCheck(bool(servers), False, None if servers else False)
+
+
 def verify_email(
     email: str, verifier: EmailVerifier, guessed: bool = False, confirmed_by: str | None = None
 ) -> GateResult:
@@ -164,14 +207,29 @@ def verify_email(
             Status.EMAIL_INVALID, f"{email} is a shared inbox, not a named doctor."
         )
     result = verifier.check(email)
+    if result.problem:
+        if confirmed_by:
+            return GateResult.ok(
+                f"We couldn't check {domain} automatically ({result.problem}), so a person checked this "
+                f"mailbox: confirmed by {confirmed_by}.",
+                confirmed_by=confirmed_by,
+            )
+        return GateResult.stop(
+            Status.NEEDS_REVIEW,
+            f"We couldn't check whether {domain} accepts email ({result.problem}). Re-check it later, "
+            "or confirm the mailbox yourself.",
+            lookup_failed=True,
+        )
     if not result.domain_accepts_mail:
         return GateResult.stop(
             Status.EMAIL_INVALID, f"{domain} has no mail server (no MX record), so this would bounce."
         )
-    if result.catch_all and confirmed_by:
+    # A computer can't confirm the mailbox on a catch-all domain, or on any real domain without a paid
+    # service. A person who checked it can.
+    if (result.catch_all or result.mailbox_exists is None) and confirmed_by:
+        why = "accepts every address (catch-all)" if result.catch_all else "accepts email, but no free check can confirm a mailbox"
         return GateResult.ok(
-            f"{domain} accepts every address (catch-all), so a person checked this mailbox: "
-            f"confirmed by {confirmed_by}.",
+            f"{domain} {why}, so a person checked this mailbox: confirmed by {confirmed_by}.",
             confirmed_by=confirmed_by,
         )
     if result.catch_all:
@@ -181,6 +239,13 @@ def verify_email(
             f"{domain} accepts every address (catch-all), so we can't confirm this mailbox exists.{extra} "
             "A person should check before we send.",
             catch_all=True,
+        )
+    if result.mailbox_exists is None:
+        return GateResult.stop(
+            Status.NEEDS_REVIEW,
+            f"{domain} accepts email (we checked its mail server), but no free check can confirm this "
+            "mailbox exists. A person should confirm it before we send.",
+            live_check=True,
         )
     if not result.mailbox_exists:
         return GateResult.stop(

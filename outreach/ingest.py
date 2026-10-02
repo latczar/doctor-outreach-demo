@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import io
 import json
 import sqlite3
 from dataclasses import dataclass, field
@@ -75,6 +76,56 @@ class IngestSummary:
     new_doctors: int = 0
     duplicates: int = 0
     already_imported: int = 0
+
+
+# --- a research list someone uploads ------------------------------------------------------
+
+UPLOAD_LIMIT_BYTES = 1_000_000
+UPLOAD_LIMIT_ROWS = 500
+NEEDED_COLUMNS = ("full_name", "grade", "specialty", "country", "email")
+
+# Made-up rows that show the format. Replace them with people who have agreed to take part.
+TEMPLATE_ROWS = [
+    {"title": "Dr", "full_name": "Sam Example", "grade": "Consultant", "specialty": "Cardiology",
+     "employer": "Example Hospital NHS Trust", "country": "United Kingdom", "reg_number": "",
+     "email": "sam.example@examplehospital.example", "source": "Trust website",
+     "profile_notes": "Leads the trust's cardiology teaching for medical students."},
+    {"title": "Dr", "full_name": "Jo Sample", "grade": "GP Partner", "specialty": "General Practice",
+     "employer": "Sample Street Surgery", "country": "United Kingdom", "reg_number": "",
+     "email": "jo.sample@samplestreet.example", "source": "Practice website",
+     "profile_notes": "Trains GP registrars and hosts student placements."},
+]
+
+
+def template_csv() -> str:
+    """A blank research list with the right columns and two made-up rows to replace."""
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=FIELDS, lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(TEMPLATE_ROWS)
+    return out.getvalue()
+
+
+def check_research_list(data: bytes) -> str:
+    """What's wrong with an uploaded research list, in words a person can act on, or "" if nothing is."""
+    if len(data) > UPLOAD_LIMIT_BYTES:
+        return f"That file is over 1 MB. Upload up to {UPLOAD_LIMIT_ROWS} doctors at a time."
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return "That file isn't saved as CSV text. In Excel or Google Sheets, save it as CSV (UTF-8)."
+    reader = csv.DictReader(io.StringIO(text))
+    columns = {name.strip() for name in reader.fieldnames or []}
+    missing = [name for name in NEEDED_COLUMNS if name not in columns]
+    if missing:
+        return (f"That file is missing these columns: {', '.join(missing)}. Use the column names from the "
+                "template exactly.")
+    rows = sum(1 for _ in reader)
+    if rows == 0:
+        return "That file has the column names but no doctors under them."
+    if rows > UPLOAD_LIMIT_ROWS:
+        return f"That file has {rows} doctors. Upload up to {UPLOAD_LIMIT_ROWS} at a time."
+    return ""
 
 
 def read_rows(path: Path) -> list[Row]:

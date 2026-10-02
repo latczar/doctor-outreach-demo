@@ -54,7 +54,7 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="foot">
-    <p>Prototype with made-up data. Every doctor's address uses the reserved <code>.example</code> domain, and the send step refuses anything else.{% if demo_inbox %} Emails go to the demo inbox instead, with a line saying who each one was for.{% endif %}</p>
+    <p>{% if demo_inbox %}Prototype. Every email goes to the demo inbox instead of the doctor, with a line saying who it was for.{% else %}Prototype with made-up data. The send step only sends to the reserved <code>.example</code> addresses.{% endif %}</p>
     <p>Drafting: {{ model }} · Sending: {{ sending }} · <a href="/architecture">How it would run in production</a> <span class="wide-only">· <a href="/phone?path={{ here | urlencode }}">See this page at phone size</a></span></p>
   </footer>
   {# The explanations behind each small "i". Each opens on top of the page and closes on a click outside it. #}

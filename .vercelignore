@@ -4,6 +4,7 @@ __pycache__/
 .claude/
 .env
 outbox/
+uploads/
 exports/
 tests/
 docs/demo-script.md

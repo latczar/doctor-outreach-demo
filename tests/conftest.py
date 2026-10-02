@@ -28,6 +28,7 @@ def settings(tmp_path):
         llm_provider="fake",
         email_sender="outbox",
         demo_inbox="",  # tests never use the inbox or key from your .env
+        uploads_dir=tmp_path / "uploads",
         resend_api_key="",
     )
 

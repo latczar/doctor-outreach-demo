@@ -8,6 +8,7 @@ data/*.db
 data/*.db-*
 !data/demo-snapshot.db
 outbox/
+uploads/
 exports/
 .vercel
 .env*

@@ -215,11 +215,11 @@ def send_approved(
             summary.deferred += 1
             continue
 
-        # 1. Demo safety: never email a real domain from this prototype. With a demo inbox set, the
-        #    email itself goes to that inbox instead (InboxRedirect).
-        if not lead["email"].endswith(allowed_suffixes):
-            _block(conn, lead["id"], f"Safety guard: this demo only sends to {', '.join(allowed_suffixes)} addresses.",
-                   summary, actor)
+        # 1. Demo safety: this prototype never emails a real address. Made-up .example addresses are
+        #    fine; a real one only goes out when every email is redirected to the demo inbox (InboxRedirect).
+        if not getattr(sender, "inbox", "") and not lead["email"].endswith(allowed_suffixes):
+            _block(conn, lead["id"], f"Safety guard: this demo only sends to {', '.join(allowed_suffixes)} "
+                   "addresses, unless every email goes to the demo inbox.", summary, actor)
             continue
 
         # 2. Check again right before sending. Someone may have opted out since approval.

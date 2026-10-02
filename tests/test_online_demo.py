@@ -65,4 +65,4 @@ def test_send_says_what_to_set_up_and_the_footer_says_where_email_goes(settings)
 
     ready = replace(settings, email_sender="resend", resend_api_key="re_test_key", demo_inbox="lat@inbox.test")
     page = TestClient(create_app(ready, llm=TemplateLLM())).get("/").text
-    assert "Sending: to the demo inbox, through Resend" in page and "Emails go to the demo inbox instead" in page
+    assert "Sending: to the demo inbox, through Resend" in page and "Every email goes to the demo inbox instead" in page

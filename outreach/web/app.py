@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import sqlite3
 import threading
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote, unquote, urlencode
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -19,6 +21,7 @@ from ..config import Settings, get_settings
 from ..db import connect, get_lead, loads
 from ..drafting import Prompts, doctor_profile, draft_context
 from ..export import export_csv, export_tsv
+from ..ingest import UPLOAD_LIMIT_BYTES, check_research_list, template_csv
 from ..guardrails import looks_like_injection, personal_overlap
 from ..llm import LLM, LLMError, describe, make_llm
 from ..models import INTAKE, STATUS_LABELS, WORKFLOW, Status, gates_passed, load_campaign
@@ -206,6 +209,32 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
 
     @app.post("/run")
     def start_run():
+        return start_pipeline(settings.seed_dir / "leads_raw.csv")
+
+    @app.post("/upload")
+    def upload(file: UploadFile, fresh: str = Form("")):
+        """Run the steps on a research list someone uploads. Laptop only: the list stays in its database."""
+        if settings.demo_online:
+            return redirect("/", "Uploading your own list works on the laptop copy only.", "warn")
+        if state.running:
+            return redirect("/run", "Wait for the current run to finish first.", "warn")
+        data = file.file.read(UPLOAD_LIMIT_BYTES + 1)
+        if problem := check_research_list(data):
+            return redirect("/", problem, "bad")
+        name = re.sub(r"[^A-Za-z0-9_-]+", "-", Path(file.filename or "list").stem).strip("-")[:40] or "list"
+        settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+        path = settings.uploads_dir / f"{datetime.now():%Y%m%d-%H%M%S}-{name}.csv"
+        path.write_bytes(data)
+        if fresh:
+            clear_local_data()
+        return start_pipeline(path)
+
+    @app.get("/template.csv")
+    def research_list_template():
+        return Response(template_csv().encode("utf-8-sig"), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": 'attachment; filename="research-list-template.csv"'})
+
+    def start_pipeline(csv_path: Path) -> RedirectResponse:
         with state.lock:
             if state.running:
                 return RedirectResponse("/run", status_code=303)
@@ -215,7 +244,7 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
             conn = connect(settings.db_path)
             try:
                 services = build_services(settings, llm=get_llm())
-                run_pipeline(conn, services, settings.seed_dir / "leads_raw.csv", on_progress=state.progress)
+                run_pipeline(conn, services, csv_path, on_progress=state.progress)
             except LLMError as exc:
                 state.error = str(exc)
             except Exception as exc:  # shown on the Run page rather than lost in a thread
@@ -254,22 +283,29 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         note = " This online copy never sends real email." if settings.demo_online and summary.sent else ""
         return redirect("/log", summary.text() + note, kind)
 
-    @app.post("/reset")
-    def reset():
-        if state.running:
-            return redirect("/", "Wait for the current run to finish first.", "warn")
+    def clear_local_data() -> None:
+        """Empty the database (keeping the made-up history and do-not-contact list) and the outbox."""
         for eml in settings.outbox_dir.glob("*.eml"):
             eml.unlink()
         state.lines, state.error = [], None
-        if online_snapshot:
-            # Online, the local AI model isn't available, so go back to the real drafts rather than an empty list.
-            restore_snapshot(settings)
-            return redirect("/", "Demo reset to the starting snapshot, with the original drafts.")
         conn = connect(settings.db_path)
         try:
             reset_data(conn, settings.seed_dir)
         finally:
             conn.close()
+
+    @app.post("/reset")
+    def reset():
+        if state.running:
+            return redirect("/", "Wait for the current run to finish first.", "warn")
+        if online_snapshot:
+            # Online, the local AI model isn't available, so go back to the real drafts rather than an empty list.
+            for eml in settings.outbox_dir.glob("*.eml"):
+                eml.unlink()
+            state.lines, state.error = [], None
+            restore_snapshot(settings)
+            return redirect("/", "Demo reset to the starting snapshot, with the original drafts.")
+        clear_local_data()
         return redirect("/", "Demo reset. Click Run the pipeline to start again.")
 
     # --- doctors, the final list and its downloads -----------------------------------

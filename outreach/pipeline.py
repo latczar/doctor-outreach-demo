@@ -16,6 +16,7 @@ from .db import audit, loads, transaction, update_lead
 from .drafting import Prompts, draft_for_lead
 from .gates import (
     DirectoryFinder,
+    DnsVerifier,
     EmailFinder,
     EmailVerifier,
     FixtureVerifier,
@@ -56,7 +57,8 @@ def build_services(settings: Settings, llm: LLM | None = None, today: date | Non
         campaign=load_campaign(settings.campaign_path),
         llm=llm or make_llm(settings),
         finder=DirectoryFinder.from_file(settings.seed_dir / "email_directory.json"),
-        verifier=FixtureVerifier.from_file(settings.seed_dir / "mail_fixture.json"),
+        # Real domains are checked for real; the made-up .example ones keep their fixture answers.
+        verifier=DnsVerifier(FixtureVerifier.from_file(settings.seed_dir / "mail_fixture.json")),
         prompts=Prompts.load(settings.prompts_dir),
         today=today or datetime.now(timezone.utc).date(),
         notifier=make_notifier(settings),

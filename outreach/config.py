@@ -44,6 +44,7 @@ class Settings:
     demo_inbox: str = ""  # when set, every email goes here instead of the made-up doctor's address
     resend_api_key: str = ""
     resend_from: str = "onboarding@resend.dev"  # Resend's test sender, until you add your own domain
+    uploads_dir: Path = ROOT / "uploads"  # research lists people upload, on the laptop only
 
 
 def get_settings() -> Settings:
@@ -77,4 +78,5 @@ def get_settings() -> Settings:
         demo_inbox="" if online else env("DEMO_INBOX", "").strip(),
         resend_api_key="" if online else env("RESEND_API_KEY", "").strip(),
         resend_from=env("RESEND_FROM", "onboarding@resend.dev").strip(),
+        uploads_dir=writable / "uploads",
     )

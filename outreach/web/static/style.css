@@ -295,6 +295,9 @@ details.other form { margin-top: 12px; display: grid; gap: 4px; }
 .decide-form h3 { margin: 0; }
 .decide-form p { margin: 0; }
 .decide-form label { display: grid; gap: 4px; }
+.upload-list { margin-bottom: 18px; }
+.upload-list summary { cursor: pointer; color: var(--accent); }
+.upload-list form { display: grid; gap: 12px; margin-top: 14px; max-width: 620px; }
 .decide-form label.check { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; }
 .decide-form label.check input { margin-top: 3px; }
 .decide-form input:not([type="checkbox"]), .decide-form select { width: 100%; }
