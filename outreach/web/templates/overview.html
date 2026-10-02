@@ -55,21 +55,21 @@
   {% if counts %}<strong>Watch the replay</strong> plays the last run back, step by step, without running anything.{% endif %}
   {% if demo_online %}<strong>Reset demo</strong> goes back to the starting snapshot, with the original drafts.{% else %}<strong>Reset demo</strong> empties everything, so you can start from the beginning.{% endif %}
 </p>
-{% if demo_online %}
-<p class="muted small">On the laptop copy you can also upload your own research list.</p>
-{% else %}
 <details class="card upload-list">
   <summary><strong>Use your own research list</strong></summary>
   <form class="decide-form" method="post" action="/upload" enctype="multipart/form-data">
     <label>Your list, as a CSV file
+      {% if demo_online %}
+      <span class="field-hint">This public demo takes made-up lists only: every address must end .example or .test, up to 50 doctors. Anyone with this link can see an uploaded list until the server restarts, and Reset demo brings back the original. Start from the <a href="/template.csv">template</a>.</span>
+      {% else %}
       <span class="field-hint">The same columns as the <a href="/template.csv">template</a>, up to 500 doctors. Use people who've agreed to take part. The list stays in the database on this laptop, and {% if demo_inbox %}every email still goes to the demo inbox{% else %}the send step won't email a real address{% endif %}.</span>
+      {% endif %}
       <input type="file" name="file" accept=".csv,text/csv" required>
     </label>
     <label class="check"><input type="checkbox" name="fresh" value="yes" checked> Start fresh: clear the made-up doctors first</label>
     <div><button class="primary">Upload and run</button></div>
   </form>
 </details>
-{% endif %}
 
 {% if not counts %}
   <section class="card start">

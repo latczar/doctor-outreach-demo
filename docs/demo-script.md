@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `155 passed`.
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `156 passed`.
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -32,7 +32,7 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 
 ## How I tested it (a good story to tell)
 
-- 155 automated tests run in about 14 seconds with a fake model, so they never call an AI.
+- 156 automated tests run in about 14 seconds with a fake model, so they never call an AI.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.
   2. Telling a small model "don't write 'I hope you are well'" made it write exactly that. I reworded it positively, and code now deletes that filler sentence and logs it, rather than retrying.
@@ -120,7 +120,7 @@ Not directly. They supply the fact the rules were missing, or confirm the one th
 Yes, on my laptop. Every approved email goes to my own inbox instead of the doctor's made-up address, with a line saying who it was for. Two guards stop it reaching a doctor: the redirect in the code, and Resend's test mode, which only delivers to my address. The online copy can't send at all.
 
 **Can it work on a real list, not only made-up doctors?**
-Yes, on my laptop. Upload a CSV with the template's columns and the same steps run on it. Real domains get a real check that they have a mail server, and since no free check can confirm a mailbox, a person confirms each one. Every email still goes to my own inbox; emailing real doctors needs MedicPaths' domain, an unsubscribe process and a lawful basis.
+Yes, on my laptop. Upload a CSV with the template's columns and the same steps run on it. Real domains get a real check that they have a mail server, and since no free check can confirm a mailbox, a person confirms each one. Every email still goes to my own inbox; emailing real doctors needs MedicPaths' domain, an unsubscribe process and a lawful basis. The live site takes made-up lists only, because anyone with the link can see what's uploaded there.
 
 **Is the replay real or a recording?**
 Real. The page rebuilds the last run from the audit log each time it loads, so the counts and times are the ones that happened. Only the by-hand bar is an estimate, and it says so. It only reads: it never drafts or sends anything.

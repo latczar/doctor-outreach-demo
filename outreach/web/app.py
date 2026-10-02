@@ -21,7 +21,7 @@ from ..config import Settings, get_settings
 from ..db import connect, get_lead, loads
 from ..drafting import Prompts, doctor_profile, draft_context
 from ..export import export_csv, export_tsv
-from ..ingest import UPLOAD_LIMIT_BYTES, check_research_list, template_csv
+from ..ingest import ONLINE_UPLOAD_ROWS, UPLOAD_LIMIT_BYTES, UPLOAD_LIMIT_ROWS, check_research_list, template_csv
 from ..guardrails import looks_like_injection, personal_overlap
 from ..llm import LLM, LLMError, describe, make_llm
 from ..models import INTAKE, STATUS_LABELS, WORKFLOW, Status, gates_passed, load_campaign
@@ -213,13 +213,17 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
 
     @app.post("/upload")
     def upload(file: UploadFile, fresh: str = Form("")):
-        """Run the steps on a research list someone uploads. Laptop only: the list stays in its database."""
-        if settings.demo_online:
-            return redirect("/", "Uploading your own list works on the laptop copy only.", "warn")
+        """Run the steps on a research list someone uploads.
+
+        On the laptop the list stays in its database. On the public demo, anyone with the link can see it,
+        so it takes made-up addresses only, and fewer of them.
+        """
         if state.running:
             return redirect("/run", "Wait for the current run to finish first.", "warn")
+        online = settings.demo_online
         data = file.file.read(UPLOAD_LIMIT_BYTES + 1)
-        if problem := check_research_list(data):
+        if problem := check_research_list(data, made_up_only=online,
+                                          limit=ONLINE_UPLOAD_ROWS if online else UPLOAD_LIMIT_ROWS):
             return redirect("/", problem, "bad")
         name = re.sub(r"[^A-Za-z0-9_-]+", "-", Path(file.filename or "list").stem).strip("-")[:40] or "list"
         settings.uploads_dir.mkdir(parents=True, exist_ok=True)

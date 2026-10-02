@@ -82,6 +82,8 @@ class IngestSummary:
 
 UPLOAD_LIMIT_BYTES = 1_000_000
 UPLOAD_LIMIT_ROWS = 500
+ONLINE_UPLOAD_ROWS = 50  # the public demo: made-up lists only, and smaller
+MADE_UP = (".example", ".test")
 NEEDED_COLUMNS = ("full_name", "grade", "specialty", "country", "email")
 
 # Made-up rows that show the format. Replace them with people who have agreed to take part.
@@ -106,8 +108,12 @@ def template_csv() -> str:
     return out.getvalue()
 
 
-def check_research_list(data: bytes) -> str:
-    """What's wrong with an uploaded research list, in words a person can act on, or "" if nothing is."""
+def check_research_list(data: bytes, made_up_only: bool = False, limit: int = UPLOAD_LIMIT_ROWS) -> str:
+    """What's wrong with an uploaded research list, in words a person can act on, or "" if nothing is.
+
+    `made_up_only` is for the public demo: anyone with the link can see what's uploaded there, so every
+    address must be a made-up one.
+    """
     if len(data) > UPLOAD_LIMIT_BYTES:
         return f"That file is over 1 MB. Upload up to {UPLOAD_LIMIT_ROWS} doctors at a time."
     try:
@@ -120,11 +126,17 @@ def check_research_list(data: bytes) -> str:
     if missing:
         return (f"That file is missing these columns: {', '.join(missing)}. Use the column names from the "
                 "template exactly.")
-    rows = sum(1 for _ in reader)
+    rows = 0
+    for number, row in enumerate(reader, start=2):
+        rows += 1
+        email = (row.get("email") or "").strip().lower()
+        if made_up_only and email and not email.endswith(MADE_UP):
+            return (f"Row {number} has a real email address. This public demo only takes made-up addresses "
+                    "ending .example or .test. Use the laptop copy for a real list.")
     if rows == 0:
         return "That file has the column names but no doctors under them."
-    if rows > UPLOAD_LIMIT_ROWS:
-        return f"That file has {rows} doctors. Upload up to {UPLOAD_LIMIT_ROWS} at a time."
+    if rows > limit:
+        return f"That file has {rows} doctors. Upload up to {limit} at a time."
     return ""
 
 
