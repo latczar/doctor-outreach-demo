@@ -127,27 +127,26 @@ def test_an_uploaded_list_runs_through_the_same_steps(settings, monkeypatch):
     assert len(list(settings.uploads_dir.glob("*-my-list.csv"))) == 1
 
 
-def test_the_live_site_takes_made_up_lists_only(settings, tmp_path):
+def test_the_live_site_refuses_files_and_runs_the_sample_list_instead(settings, tmp_path):
     online = replace(settings, demo_online=True, snapshot_path=tmp_path / "no-snapshot.db")
     client = TestClient(create_app(online, llm=TemplateLLM()))
-    real = f"{','.join(FIELDS)}\n{ROW}\n".encode()
-    assert "only takes made-up addresses" in client.post(
-        "/upload", files={"file": ("list.csv", real, "text/csv")}).text
+    page = client.post("/upload", files={"file": ("list.csv", template_csv().encode(), "text/csv")}).text
+    assert "works on the laptop copy only" in page and 'action="/upload/sample"' in page
 
-    client.post("/upload", files={"file": ("list.csv", template_csv().encode(), "text/csv")}, data={"fresh": "yes"})
+    client.post("/upload/sample")
     conn = connect(online.db_path)
     try:
-        rows = [dict(r) for r in conn.execute("SELECT full_name, status, reason FROM leads ORDER BY id")]
+        rows = {r["full_name"]: dict(r) for r in conn.execute(
+            "SELECT full_name, status, reason FROM leads WHERE status != 'DUPLICATE'")}
+        duplicates = conn.execute("SELECT COUNT(*) FROM leads WHERE status = 'DUPLICATE'").fetchone()[0]
     finally:
         conn.close()
-    # Made-up domains the demo has no answers for: a person confirms each mailbox, as for a real one.
-    assert [r["full_name"] for r in rows] == ["Sam Example", "Jo Sample"]
-    assert all(r["status"] == Status.NEEDS_REVIEW and "made-up domain" in r["reason"] for r in rows)
-
-
-def test_the_live_site_takes_up_to_50_doctors():
-    many = "\n".join([",".join(FIELDS)] + [ROW.replace("realtrust.org.uk", "realtrust.example")] * 51).encode()
-    assert "Upload up to 50" in check_research_list(many, made_up_only=True, limit=50)
+    # The same steps as an upload: made-up domains need a person to confirm the mailbox, as real ones do.
+    assert rows["Sam Example"]["status"] == Status.NEEDS_REVIEW and "made-up domain" in rows["Sam Example"]["reason"]
+    assert rows["Jo Sample"]["status"] == Status.NEEDS_REVIEW
+    assert rows["Lee Placeholder"]["status"] == Status.DISQUALIFIED  # dermatology isn't targeted
+    assert rows["Ana Demo"]["status"] == Status.EMAIL_INVALID  # info@ is a shared inbox
+    assert duplicates == 1  # Sam Example appears twice in the list
 
 
 def test_the_template_downloads(settings):

@@ -57,18 +57,20 @@
 </p>
 <details class="card upload-list">
   <summary><strong>Use your own research list</strong></summary>
+  {% if demo_online %}
+  <p>On the laptop copy you can upload your own list. This public demo can't take files, because anyone with the link would see them, so it runs a sample instead: 5 made-up doctors go through the same steps, as if you'd uploaded them. Reset demo brings back the original list.</p>
+  <form method="post" action="/upload/sample"><button class="primary">Try the sample list</button></form>
+  {% else %}
   <form class="decide-form" method="post" action="/upload" enctype="multipart/form-data">
     <label>Your list, as a CSV file
-      {% if demo_online %}
-      <span class="field-hint">This public demo takes made-up lists only: every address must end .example or .test, up to 50 doctors. Anyone with this link can see an uploaded list until the server restarts, and Reset demo brings back the original. Start from the <a href="/template.csv">template</a>.</span>
-      {% else %}
       <span class="field-hint">The same columns as the <a href="/template.csv">template</a>, up to 500 doctors. Use people who've agreed to take part. The list stays in the database on this laptop, and {% if demo_inbox %}every email still goes to the demo inbox{% else %}the send step won't email a real address{% endif %}.</span>
-      {% endif %}
       <input type="file" name="file" accept=".csv,text/csv" required>
     </label>
     <label class="check"><input type="checkbox" name="fresh" value="yes" checked> Start fresh: clear the made-up doctors first</label>
     <div><button class="primary">Upload and run</button></div>
   </form>
+  <form method="post" action="/upload/sample"><p class="muted small">No list to hand? <button class="quiet">Try the sample list</button> of 5 made-up doctors.</p></form>
+  {% endif %}
 </details>
 
 {% if not counts %}

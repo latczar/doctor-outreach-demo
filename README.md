@@ -92,7 +92,7 @@ To watch real emails arrive in a web inbox, run Mailpit (`docker run -p 8025:802
 
 To get real emails on your phone, sign up to [Resend](https://resend.com) for free with your own address and create a key with sending access. Then set `EMAIL_SENDER=resend`, `DEMO_INBOX` (that address) and `RESEND_API_KEY` in `.env`. Every approved email then lands in your inbox, starting with a line that says which doctor it was for. Two things stop it reaching a doctor: the app redirects every email to your inbox, and Resend's test mode only delivers to the address you signed up with. The online copy ignores these settings.
 
-To run your own research list on the laptop, open **Use your own research list** on the Overview, download the template, fill in people who've agreed to take part (up to 500), and click **Upload and run**. The rows go through the same steps and stay in the laptop's database. The live site takes uploads too, but made-up lists only (every address ending .example or .test, up to 50 rows), because anyone with the link can see them until the server restarts. Real domains get a real check that they have a mail server (an MX lookup, with dnspython). No free check can confirm a mailbox exists, so those doctors go to Needs you, where a person confirms it. A real address is only ever emailed through the demo inbox redirect; without it, the send step blocks it.
+To run your own research list on the laptop, open **Use your own research list** on the Overview, download the template, fill in people who've agreed to take part (up to 500), and click **Upload and run**. The rows go through the same steps and stay in the laptop's database. The live site can't take your own file, because anyone with the link would see it. It offers **Try the sample list** instead: 5 made-up doctors go through the same steps as an upload. Real domains get a real check that they have a mail server (an MX lookup, with dnspython). No free check can confirm a mailbox exists, so those doctors go to Needs you, where a person confirms it. A real address is only ever emailed through the demo inbox redirect; without it, the send step blocks it.
 
 ## How it's built
 
@@ -114,7 +114,7 @@ outreach/
   web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, replay, architecture, phone view
     present.py           plain English for the screens: the three lists, trackers, highlights, the small "i" explanations
     replay.py            the replay page: the last run, rebuilt from the audit log
-tests/                   156 tests, one file per step plus end-to-end, screen, alert, decision and web tests
+tests/                   155 tests, one file per step plus end-to-end, screen, alert, decision and web tests
 ```
 
 Python, FastAPI, SQLite and server-rendered pages, styled with patterns from the GOV.UK Design System in our own look. No LangChain, no agents, no queue: each step is a function you can point at and test.
