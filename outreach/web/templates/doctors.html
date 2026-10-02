@@ -20,8 +20,7 @@
 {% endif %}
 
 <form class="card search" method="get" action="/doctors" role="search">
-  <label class="grow">Search
-    <span class="field-hint">Name, employer, specialty or email</span>
+  <label class="grow">Search by name, employer, specialty or email
     <input type="search" name="q" value="{{ filters.q }}">
   </label>
   <label>Specialty
@@ -72,10 +71,12 @@
         <span class="muted small">{{ l.employer }}{% if l.country %}, {{ l.country }}{% endif %}</span>
       </div>
       <div class="doctor-where">
-        <ol class="tracker" aria-label="Progress: {{ r.where[0] }}">
-          {% for t in r.tracker %}<li class="{{ t.state }}" title="{{ t.label }}: {{ state_words[t.state] }}"><span class="sr">{{ t.label }}: {{ state_words[t.state] }}</span></li>{% endfor %}
-        </ol>
-        <p class="where-lead {{ r.bucket }}">{{ r.where[0] }}</p>
+        <div class="where-head">
+          <ol class="tracker" aria-label="Progress: {{ r.where[0] }}">
+            {% for t in r.tracker %}<li class="{{ t.state }}" title="{{ t.label }}: {{ state_words[t.state] }}"><span class="sr">{{ t.label }}: {{ state_words[t.state] }}</span></li>{% endfor %}
+          </ol>
+          <p class="where-lead {{ r.bucket }}">{{ r.where[0] }}</p>
+        </div>
         <p class="small">{{ r.where[1] | explain }}</p>
         {% if l.status == 'NEEDS_REVIEW' %}<p><a class="button small-button primary" href="/leads/{{ l.id }}#decide">Decide</a></p>{% endif %}
       </div>

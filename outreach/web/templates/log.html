@@ -20,7 +20,7 @@
 
 <section class="card" id="sent">
   <h2>Emails sent</h2>
-  <p class="muted small">Every email sent, including earlier campaigns loaded at the start. The "Not previously contacted?" step reads this table, by email or registration number, and stops anyone contacted in the last {{ campaign.cooldown_days }} days.</p>
+  <p class="muted small">Every email sent, including earlier campaigns. The "Not previously contacted?" step reads this table, by email or registration number, and stops anyone contacted in the last {{ campaign.cooldown_days }} days.</p>
   <div class="table-wrap">
   <table>
     <thead><tr><th>When</th><th>Campaign</th><th>Doctor</th><th>Email</th><th>Status</th><th>Detail</th></tr></thead>
@@ -44,10 +44,10 @@
   </div>
   {{ pagination(sends_pager, "emails") }}
   <ul class="status-key" aria-label="What the statuses mean">
-    <li><span class="tag good">sent</span>Went out in this campaign. The detail says "No reply yet" until there's an outcome.</li>
+    <li><span class="tag good">sent</span>Went out in this campaign. "No reply yet" until there's an outcome.</li>
     <li><span class="tag muted">earlier campaign</span>History from before this system, loaded at the start.</li>
-    <li><span class="tag warn">failed</span>It didn't go out. It's tried again next time someone clicks Send.</li>
-    <li><span class="tag warn">sending (check by hand)</span>The program stopped mid-send. It's never resent automatically, so a person checks rather than risk a second email.</li>
+    <li><span class="tag warn">failed</span>Didn't go out. It's tried again at the next Send.</li>
+    <li><span class="tag warn">sending (check by hand)</span>Stopped mid-send. It's never resent automatically, so a person checks first.</li>
   </ul>
   <p class="actions-inline">
     <a class="button" href="/export/final.csv">Export final list</a>
@@ -55,9 +55,10 @@
   </p>
 </section>
 
+<div class="pair">
 <section class="card" id="alerts">
   <h2>Urgent alerts</h2>
-  <p class="muted small">Two things count as urgent: an approved email that failed to send, and a profile that tries to give the system instructions. They go through one hook, so n8n or Zapier can forward them to WhatsApp, Slack or Teams. In this demo they go to <code>outbox/alerts.log</code>.</p>
+  <p class="muted small">An approved email that failed to send, or a profile that tries to give the system instructions. n8n or Zapier can forward these to WhatsApp, Slack or Teams. This demo writes them to <code>outbox/alerts.log</code>.</p>
   {% if alerts %}
     <ul class="alerts">
       {% for a in alerts %}{% set d = a.detail | fromjson %}
@@ -77,10 +78,11 @@
     {% for s in suppressed %}<li>{{ s.email }} <span class="muted">since {{ s.added_at[:10] }}: {{ s.reason }}</span></li>{% endfor %}
   </ul>
 </section>
+</div>
 
 <section class="card" id="events">
   <h2>Everything that happened <span class="muted small">newest first</span></h2>
-  <p class="muted small">Every decision, by the system or by a person, written as it happens. Nothing is edited afterwards. Each doctor's page and the replay are built from it.</p>
+  <p class="muted small">Every decision, by the system or a person, written as it happens and never edited. Each doctor's page and the replay are built from it.</p>
   <div class="table-wrap">
   <table>
     <thead><tr><th>When (UTC)</th><th>Who</th><th>Doctor</th><th>What happened</th><th>Detail</th></tr></thead>

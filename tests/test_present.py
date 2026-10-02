@@ -153,6 +153,8 @@ def test_overview_reads_as_x_of_y_with_a_to_do_list(client):
     # Every page carries the explanation boxes the small "i" buttons open, and our own logo.
     assert 'id="term-catch-all" popover' in page and 'popovertarget="how-email_verified"' in page
     assert 'href="/static/logo.svg"' in page
+    # The stylesheet link carries the file's change time, so browsers pick up a new layout straight away.
+    assert 'href="/static/style.css?v=' in page
 
 
 def test_doctor_search_and_filters(client):

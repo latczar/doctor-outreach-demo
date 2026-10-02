@@ -24,7 +24,7 @@ def test_a_fresh_online_server_starts_from_the_snapshot(settings, services, tmp_
     online = replace(settings, db_path=tmp_path / "online" / "outreach.db", demo_online=True, snapshot_path=snapshot)
     client = TestClient(create_app(online, llm=TemplateLLM()))
     page = client.get("/").text
-    assert "Online prototype with made-up data" in page
+    assert "Online prototype with made-up data" in page and 'popovertarget="about-online"' in page
     assert "19 of 24 doctors fit the campaign" in page
 
     # Approve one email, so there's a change to undo.

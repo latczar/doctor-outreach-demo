@@ -125,6 +125,14 @@ def safe_path(path: str | None) -> str:
     return path if path and path.startswith("/") and not path.startswith("//") else "/"
 
 
+def asset(name: str) -> str:
+    """A static file's address with its last-changed time, so a browser fetches it again after an edit."""
+    try:
+        return f"/static/{name}?v={int((HERE / 'static' / name).stat().st_mtime)}"
+    except OSError:  # a host that serves the files elsewhere: the plain address still works
+        return f"/static/{name}"
+
+
 def create_app(settings: Settings | None = None, llm: LLM | None = None) -> FastAPI:
     settings = settings or get_settings()
     campaign = load_campaign(settings.campaign_path)
@@ -140,7 +148,7 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         status_label=lambda s: STATUS_LABELS[Status(s)], tone=tone, buckets=BUCKETS, bucket_tone=BUCKET_TONE,
         phrase=phrase, step_status=step_status, state_words=STATE_WORDS, needs_person=NEEDS_PERSON,
         intake=INTAKE, who=who, describe_event=describe_event, event_detail=event_detail,
-        glossary=GLOSSARY, term_id=term_id,
+        glossary=GLOSSARY, term_id=term_id, asset=asset,
     )
     templates.env.filters.update(fromjson=lambda value: loads(value, []), headline=headline, explain=explain_terms)
     state = RunState()

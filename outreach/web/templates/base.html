@@ -6,7 +6,7 @@
   <title>{% block title %}Outreach{% endblock %} | Doctor outreach</title>
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
   {% block head %}{% endblock %}
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ asset('style.css') }}">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -39,7 +39,12 @@
     </div>
   </header>
   {% if demo_online %}
-    <div class="demo-banner">Online prototype with made-up data. New drafts here use a simple template, because the drafting engine runs on a local machine; the drafts loaded at the start are the real ones. Changes reset when the server restarts.</div>
+    <div class="demo-banner">Online prototype with made-up data. New drafts here use a simple template, and changes reset when the server restarts.<button type="button" class="info" popovertarget="about-online" aria-label="Why a simple template?">i</button></div>
+    <div class="info-pop" id="about-online" popover>
+      <p><strong>Why a simple template?</strong></p>
+      <p>The drafting engine runs on a laptop, not on this server. The drafts already here when the site starts are real ones from that engine.</p>
+      <button type="button" popovertarget="about-online" popovertargetaction="hide">Close</button>
+    </div>
   {% endif %}
   {% if run.running and active != 'run' %}
     <div class="run-banner"><span class="spinner"></span>The pipeline is running. <a href="/run">Watch its progress</a></div>

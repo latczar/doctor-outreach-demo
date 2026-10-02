@@ -5,13 +5,14 @@
 {% macro how_box(key, label, how) %}
 <div class="info-pop" id="how-{{ key }}" popover>
   <p><strong>{{ label }}</strong></p>
-  <p>{{ how }}</p>
+  <p>{{ how | explain }}</p>
   <button type="button" popovertarget="how-{{ key }}" popovertargetaction="hide">Close</button>
 </div>
 {% endmacro %}
 
-{% macro how_button(key) %}<button type="button" class="info step-info" popovertarget="how-{{ key }}" aria-label="How this step decides">i</button>{% endmacro %}
+{% macro how_button(key) %}<button type="button" class="info" popovertarget="how-{{ key }}" aria-label="How this step decides">i</button>{% endmacro %}
 
+{# Two lines a step: its name and status, then what happened. How it decides opens from the "i". #}
 {% macro step_row(step, number) %}
 {% set status, status_tone = step_status(step) %}
 <li class="task">
@@ -21,17 +22,18 @@
       <h3>{{ step.label }}{{ how_button(step.key) }}</h3>
       <span class="tag {{ status_tone }}">{{ status }}</span>
     </div>
-    <p class="task-summary">{{ step.summary }}</p>
-    {% if step.of %}<div class="meter" aria-hidden="true"><span style="width: {{ (100 * step.count / step.of) | round | int }}%"></span></div>{% endif %}
-    <p class="hint">{{ step.how | explain }}</p>
+    <div class="task-result">
+      <p class="task-summary">{{ step.summary }}</p>
+      {% if step.of %}<span class="meter" aria-hidden="true"><span style="width: {{ (100 * step.count / step.of) | round | int }}%"></span></span>{% else %}<span></span>{% endif %}
+      {% if step.waiting or step.stopped %}
+        <p class="task-outcomes">
+          {% for code, n in step.waiting.items() %}<span class="tag waiting">{{ phrase(code, n) }}</span>{% endfor %}
+          {% for code, n in step.stopped.items() %}<span class="tag {{ 'warn' if code in needs_person else 'muted' }}">{{ phrase(code, n) }}</span>{% endfor %}
+          <a href="/doctors?step={{ step.key }}">See who, and why</a>
+        </p>
+      {% endif %}
+    </div>
     {{ how_box(step.key, step.label, step.how) }}
-    {% if step.waiting or step.stopped %}
-      <p class="task-outcomes">
-        {% for code, n in step.waiting.items() %}<span class="tag waiting">{{ phrase(code, n) }}</span>{% endfor %}
-        {% for code, n in step.stopped.items() %}<span class="tag {{ 'warn' if code in needs_person else 'muted' }}">{{ phrase(code, n) }}</span>{% endfor %}
-        <a href="/doctors?step={{ step.key }}">See who, and why</a>
-      </p>
-    {% endif %}
   </div>
 </li>
 {% endmacro %}
@@ -50,28 +52,11 @@
     <button class="quiet">Reset demo</button>
   </form>
 </div>
-<p class="actions-help">
-  <strong>Run the pipeline</strong> reads the research list, runs the rule steps, then has the system write a personalised email for each doctor cleared to contact. Nothing is sent: that waits for a person to approve and click Send. Running it again only picks up new rows.
-  {% if counts %}<strong>Watch the replay</strong> plays the last run back, step by step, without running anything.{% endif %}
-  {% if demo_online %}<strong>Reset demo</strong> goes back to the starting snapshot, with the original drafts.{% else %}<strong>Reset demo</strong> empties everything, so you can start from the beginning.{% endif %}
-</p>
-<details class="card upload-list">
-  <summary><strong>Use your own research list</strong></summary>
-  {% if demo_online %}
-  <p>On the laptop copy you can upload your own list. This public demo can't take files, because anyone with the link would see them, so it runs a sample instead: 5 made-up doctors go through the same steps, as if you'd uploaded them. Reset demo brings back the original list.</p>
-  <form method="post" action="/upload/sample"><button class="primary">Try the sample list</button></form>
-  {% else %}
-  <form class="decide-form" method="post" action="/upload" enctype="multipart/form-data">
-    <label>Your list, as a CSV file
-      <span class="field-hint">The same columns as the <a href="/template.csv">template</a>, up to 500 doctors. Use people who've agreed to take part. The list stays in the database on this laptop, and {% if demo_inbox %}every email still goes to the demo inbox{% else %}the send step won't email a real address{% endif %}.</span>
-      <input type="file" name="file" accept=".csv,text/csv" required>
-    </label>
-    <label class="check"><input type="checkbox" name="fresh" value="yes" checked> Start fresh: clear the made-up doctors first</label>
-    <div><button class="primary">Upload and run</button></div>
-  </form>
-  <form method="post" action="/upload/sample"><p class="muted small">No list to hand? <button class="quiet">Try the sample list</button> of 5 made-up doctors.</p></form>
-  {% endif %}
-</details>
+<ul class="actions-help">
+  <li><strong>Run the pipeline</strong> checks the research list and drafts an email for each doctor who passes. Nothing is sent until a person approves it.</li>
+  {% if counts %}<li><strong>Watch the replay</strong> plays the last run back, step by step, without running anything.</li>{% endif %}
+  <li><strong>Reset demo</strong> {% if demo_online %}goes back to the starting list and drafts.{% else %}empties everything, so you can start from the beginning.{% endif %}</li>
+</ul>
 
 {% if not counts %}
   <section class="card start">
@@ -133,17 +118,18 @@
   {% endif %}
 
   <section class="card">
-    <h2>How the final list was built</h2>
-    <p class="muted">Five rule steps, in order. Each one says how many doctors got through and why the others didn't.</p>
+    <h2>How the final list was built <span class="muted small">five rule steps, in order</span></h2>
     <ol class="tasks">
       <li class="task">
         <span class="task-num" aria-hidden="true">1</span>
         <div class="task-body">
           <div class="task-head"><h3>{{ intake.label }}{{ how_button("intake") }}</h3><span class="tag good">Done</span></div>
-          <p class="task-summary">{{ view.rows }} rows in the research list became {{ view.unique }} doctors</p>
-          <p class="hint">{{ intake.how | explain }}</p>
+          <div class="task-result">
+            <p class="task-summary">{{ view.rows }} rows became {{ view.unique }} doctors</p>
+            <span></span>
+            {% if view.duplicates %}<p class="task-outcomes"><span class="tag muted">{{ phrase('DUPLICATE', view.duplicates) }}</span> <a href="/doctors?step=dedupe">See who, and why</a></p>{% endif %}
+          </div>
           {{ how_box("intake", intake.label, intake.how) }}
-          {% if view.duplicates %}<p class="task-outcomes"><span class="tag muted">{{ phrase('DUPLICATE', view.duplicates) }}</span> <a href="/doctors?step=dedupe">See who, and why</a></p>{% endif %}
         </div>
       </li>
       {% for step in view.steps[:4] %}{{ step_row(step, loop.index + 1) }}{% endfor %}
@@ -158,11 +144,28 @@
   </section>
 
   <section class="card">
-    <h2>Writing and sending</h2>
-    <p class="muted">The system drafts and checks each email, a person approves it, then it's sent once and logged.</p>
+    <h2>Writing and sending <span class="muted small">a person approves every email before it's sent</span></h2>
     <ol class="tasks">
       {% for step in view.steps[4:] %}{{ step_row(step, loop.index + 5) }}{% endfor %}
     </ol>
   </section>
 {% endif %}
+
+<details class="card upload-list">
+  <summary><strong>Use your own research list</strong></summary>
+  {% if demo_online %}
+  <p>On the laptop copy you can upload your own list. This public demo can't take files, because anyone with the link would see them, so it runs a sample instead: 5 made-up doctors go through the same steps, as if you'd uploaded them. Reset demo brings back the original list.</p>
+  <form method="post" action="/upload/sample"><button class="primary">Try the sample list</button></form>
+  {% else %}
+  <form class="decide-form" method="post" action="/upload" enctype="multipart/form-data">
+    <label>Your list, as a CSV file
+      <span class="field-hint">The same columns as the <a href="/template.csv">template</a>, up to 500 doctors. Use people who've agreed to take part. The list stays in the database on this laptop, and {% if demo_inbox %}every email still goes to the demo inbox{% else %}the send step won't email a real address{% endif %}.</span>
+      <input type="file" name="file" accept=".csv,text/csv" required>
+    </label>
+    <label class="check"><input type="checkbox" name="fresh" value="yes" checked> Start fresh: clear the made-up doctors first</label>
+    <div><button class="primary">Upload and run</button></div>
+  </form>
+  <form method="post" action="/upload/sample"><p class="muted small">No list to hand? <button class="quiet">Try the sample list</button> of 5 made-up doctors.</p></form>
+  {% endif %}
+</details>
 {% endblock %}

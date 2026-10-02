@@ -212,7 +212,9 @@ The screens are organised around the team's jobs, not the system's states. Each 
 
 **Deciding on a doctor who needs you:** the person never skips the rules. They supply the missing fact (a name, a grade from the list, a better email) or confirm a catch-all mailbox, and the rules run again from the top; if the doctor passes, the system writes their email straight away. Or they take the doctor off the list. Both need a note and a name, and both go in the history (`override.py`).
 
-**On a phone:** every field has its explanation in a hint above it, not as placeholder text inside it (the GOV.UK advice), so nothing is cut off or disappears when you type. The menu becomes a 2x2 grid, buttons go full width, and the overview hides each step's "how it decides" line to keep it short.
+**On a phone:** every field has its explanation in a hint above it, not as placeholder text inside it (the GOV.UK advice), so nothing is cut off or disappears when you type. The menu becomes a 2x2 grid, buttons go full width, and each step's result stacks under its name.
+
+**Compact on a laptop:** most laptops run Windows at 150 to 175% scaling, so the browser lays the page out on a small canvas (on Lat's laptop, about 1,460 by 790 pixels). So the text is 15 pixels, the spacing is tight, and each step on the overview takes two lines: its name and status, then what happened, with the bars lined up like a funnel. How a step decides opens from its "i". The overview went from 3½ screens to 2. 15 pixels is the floor, because smaller text is hard to read over a screen share. The stylesheet link carries the file's change time, so a browser picks up a new layout straight away.
 
 **Light or dark:** the switch at the top right sets a cookie; light is the default.
 
