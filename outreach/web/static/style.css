@@ -234,7 +234,8 @@ label { font-weight: 600; font-size: 0.9rem; }
 .reviewer-bar details { display: inline-flex; gap: 8px; align-items: center; }
 .reviewer-bar summary { cursor: pointer; color: var(--accent); }
 .review-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 14px; align-items: start; }
-.queue { position: sticky; top: 12px; padding: 12px; }
+.queue { position: sticky; top: 12px; padding: 12px; max-height: calc(100vh - 24px); overflow-y: auto; } /* a long panel scrolls on its own */
+.queue .pagination { margin: 2px 0 12px; gap: 8px; font-size: 0.85rem; }
 .queue h2 { font-size: 0.95rem; margin: 14px 0 6px; }
 .queue h2:first-child { margin-top: 0; }
 .queue-list { list-style: none; margin: 0 0 8px; padding: 0; }
@@ -363,7 +364,7 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
 @media (max-width: 1000px) {
   .review-layout { grid-template-columns: minmax(0, 1fr); }
   .review-layout .current { order: -1; }
-  .queue { position: static; }
+  .queue { position: static; max-height: none; overflow: visible; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .pair { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,5 +1,8 @@
 """The screen helpers: plain phrases, the tracker, highlighting, and the pages that use them."""
 
+import html
+import importlib
+import re
 import time
 from dataclasses import replace
 
@@ -189,6 +192,44 @@ def test_review_shows_one_email_at_a_time(client, conn):
         "ORDER BY d.id DESC LIMIT 1").fetchone()["id"]
     page = client.get(f"/review?d={mohammed}").text
     assert 'class="danger"' in page and "Need fixing" in page
+
+
+def waiting_drafts(conn) -> list[int]:
+    return [r["id"] for r in conn.execute(
+        """SELECT d.id FROM drafts d JOIN leads l ON l.id = d.lead_id WHERE l.status = 'PENDING_APPROVAL'
+           AND d.id = (SELECT MAX(id) FROM drafts WHERE lead_id = l.id) ORDER BY l.id""")]
+
+
+def queue_ids(page: str) -> list[tuple[bool, int]]:
+    """The names in the lists beside the email, in order: (marked as the one on screen, draft id)."""
+    aside = page[page.index('<aside class="card queue"'):page.index("</aside>")]
+    return [(on == "on", int(d)) for on, d in re.findall(r'<li class="(on)?">\s*<a href="/review\?d=(\d+)"', aside)]
+
+
+def test_the_review_lists_come_in_pages_and_open_where_you_are(client, conn, monkeypatch):
+    monkeypatch.setattr(importlib.import_module("outreach.web.app"), "QUEUE_PER_PAGE", 4)
+    waiting = waiting_drafts(conn)
+    assert len(waiting) == 10
+
+    first = client.get("/review").text
+    assert "1 to 4 of 10" in first and [d for _, d in queue_ids(first)][:4] == waiting[:4]
+    following = html.unescape(re.search(r'href="([^"]+)" rel="next"', first).group(1))
+    assert following == f"/review?d={waiting[0]}&waiting=2"
+
+    # Opening the 7th email shows the page it's on, with its name marked.
+    seventh = client.get(f"/review?d={waiting[6]}").text
+    assert "5 to 8 of 10" in seventh and (True, waiting[6]) in queue_ids(seventh) and "Email 7 of 11" in seventh
+
+    # Turning the list's page keeps the same email on screen.
+    last = client.get(f"/review?d={waiting[6]}&waiting=3").text
+    assert "9 to 10 of 10" in last and "Email 7 of 11" in last
+
+
+def test_the_approved_list_names_five_and_counts_the_rest(client, conn, campaign):
+    for draft_id in waiting_drafts(conn)[:7]:
+        approve(conn, draft_id, "Lat", campaign)
+    page = client.get("/review").text
+    assert "Approved, not sent" in page and "and 2 more" in page and "Send approved (7)" in page
 
 
 def test_run_page_reports_each_step_and_other_pages_never_reload(settings, conn):

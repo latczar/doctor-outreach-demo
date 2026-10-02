@@ -62,6 +62,8 @@ STATE_WORDS = {"done": "passed", "waiting": "waiting", "person": "needs you", "s
 FILTER_KEYS = ("q", "show", "step", "specialty", "country")
 SENDS_PER_PAGE = 20  # outreach log: emails sent
 EVENTS_PER_PAGE = 25  # outreach log: everything that happened
+QUEUE_PER_PAGE = 10  # review: names in each list beside the email
+APPROVED_SHOWN = 5  # review: approved names listed above the Send button
 
 
 class RunState:
@@ -402,49 +404,79 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
 
     # --- review, one email at a time -------------------------------------------------
 
-    def review_items(conn, statuses: tuple[str, ...]) -> list[dict]:
-        placeholders = ", ".join("?" for _ in statuses)
-        leads = conn.execute(
-            f"SELECT * FROM leads WHERE campaign_id = ? AND status IN ({placeholders}) ORDER BY id",
-            (campaign.id, *statuses),
+    def review_list(conn, status: str) -> list[dict]:
+        """One of the lists beside the email on the Review page, with each doctor's latest draft. Names only:
+        the full card, with its checks and highlights, is built for the one email on screen."""
+        rows = conn.execute(
+            """SELECT l.*, d.id AS draft_id, d.reviewer AS draft_reviewer, d.edited_by_reviewer AS draft_edited
+               FROM leads l LEFT JOIN drafts d ON d.id = (SELECT MAX(id) FROM drafts WHERE lead_id = l.id)
+               WHERE l.campaign_id = ? AND l.status = ? ORDER BY l.id""",
+            (campaign.id, status),
         ).fetchall()
-        items = []
-        for row in leads:
+        entries = []
+        for row in rows:
             lead = dict(row)
-            draft = conn.execute("SELECT * FROM drafts WHERE lead_id = ? ORDER BY id DESC LIMIT 1",
-                                 (lead["id"],)).fetchone()
-            draft = dict(draft) if draft else {}
-            checks = loads(draft.get("checks"), [])
-            # The same word matching the personalised check used, so the highlight shows what it saw.
-            stems, _ = personal_overlap(draft_context(lead, campaign), draft.get("body") or "")
-            items.append({
-                "lead": lead,
-                "draft": draft,
-                "gates": loads(lead["gate_results"], {}),
-                "salutation": doctor_profile(lead)["salutation"],
-                "injection": looks_like_injection(lead["profile_notes"]),
-                "attempts": conn.execute("SELECT COUNT(*) FROM drafts WHERE lead_id = ?", (lead["id"],)).fetchone()[0],
-                "checks": checks,
-                "failed": [c for c in checks if not c["ok"]],
-                "fixes": loads(draft.get("fixes"), []),
-                "notes_html": highlight_notes(lead["profile_notes"], stems),
-                "body_html": highlight(draft.get("body"), stems),
-            })
-        return items
+            draft = {"id": lead.pop("draft_id"), "reviewer": lead.pop("draft_reviewer"),
+                     "edited_by_reviewer": lead.pop("draft_edited")}
+            entries.append({"lead": lead, "draft": draft})
+        return entries
+
+    def review_item(conn, lead: dict) -> dict:
+        """Everything the review card shows for one doctor: the latest draft, its checks and the highlights."""
+        draft = conn.execute("SELECT * FROM drafts WHERE lead_id = ? ORDER BY id DESC LIMIT 1",
+                             (lead["id"],)).fetchone()
+        draft = dict(draft) if draft else {}
+        checks = loads(draft.get("checks"), [])
+        # The same word matching the personalised check used, so the highlight shows what it saw.
+        stems, _ = personal_overlap(draft_context(lead, campaign), draft.get("body") or "")
+        return {
+            "lead": lead,
+            "draft": draft,
+            "gates": loads(lead["gate_results"], {}),
+            "salutation": doctor_profile(lead)["salutation"],
+            "injection": looks_like_injection(lead["profile_notes"]),
+            "attempts": conn.execute("SELECT COUNT(*) FROM drafts WHERE lead_id = ?", (lead["id"],)).fetchone()[0],
+            "checks": checks,
+            "failed": [c for c in checks if not c["ok"]],
+            "fixes": loads(draft.get("fixes"), []),
+            "notes_html": highlight_notes(lead["profile_notes"], stems),
+            "body_html": highlight(draft.get("body"), stems),
+        }
 
     def render_review(request: Request, errors: dict | None = None, edits: dict | None = None,
-                      selected: int | None = None) -> HTMLResponse:
+                      selected: int | None = None, waiting: str | None = None,
+                      fixing: str | None = None) -> HTMLResponse:
+        """One email on screen, with the lists beside it 10 names at a time: ?waiting=2, ?fixing=3."""
         conn = connect(settings.db_path)
         try:
-            pending = review_items(conn, (Status.PENDING_APPROVAL,))
-            attention = review_items(conn, (Status.DRAFT_FAILED,))
+            pending = review_list(conn, Status.PENDING_APPROVAL)
+            attention = review_list(conn, Status.DRAFT_FAILED)
             queue = pending + attention
-            current = next((i for i in queue if i["draft"].get("id") == selected), queue[0] if queue else None)
-            index = queue.index(current) if current else -1
+            chosen = next((i for i in queue if i["draft"]["id"] == selected), queue[0] if queue else None)
+            index = queue.index(chosen) if chosen else -1
+
+            def link(**pages) -> str:
+                # Turning one list's page keeps the email on screen and the other list where it was.
+                params = {"d": chosen["draft"]["id"] if chosen else None, "waiting": waiting, "fixing": fixing}
+                return "/review?" + urlencode({k: v for k, v in (params | pages).items() if v is not None})
+
+            def page_of(entries: list[dict], asked: str | None, name: str) -> tuple[list[dict], dict]:
+                # A list opens on the page holding the email on screen, unless someone asked for another page.
+                if asked is None and chosen in entries:
+                    asked = entries.index(chosen) // QUEUE_PER_PAGE + 1
+                p = pager(len(entries), asked, QUEUE_PER_PAGE)
+                p["prev"] = link(**{name: p["page"] - 1}) if p["page"] > 1 else None
+                p["next"] = link(**{name: p["page"] + 1}) if p["page"] < p["pages"] else None
+                return entries[p["offset"]:p["offset"] + p["size"]], p
+
+            pending_shown, waiting_pages = page_of(pending, waiting, "waiting")
+            attention_shown, fixing_pages = page_of(attention, fixing, "fixing")
             return render(
                 request, "review.html", conn,
-                pending=pending, attention=attention, approved=review_items(conn, (Status.APPROVED,)),
-                queue=queue, current=current, index=index,
+                pending=pending, attention=attention, approved=review_list(conn, Status.APPROVED),
+                pending_shown=pending_shown, attention_shown=attention_shown,
+                waiting_pages=waiting_pages, fixing_pages=fixing_pages, approved_shown=APPROVED_SHOWN,
+                queue=queue, current=review_item(conn, chosen["lead"]) if chosen else None, index=index,
                 previous=queue[index - 1] if index > 0 else None,
                 following=queue[index + 1] if 0 <= index < len(queue) - 1 else None,
                 errors=errors or {}, edits=edits or {},
@@ -453,8 +485,8 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
             conn.close()
 
     @app.get("/review", response_class=HTMLResponse)
-    def review_page(request: Request, d: int | None = None):
-        return render_review(request, selected=d)
+    def review_page(request: Request, d: int | None = None, waiting: str | None = None, fixing: str | None = None):
+        return render_review(request, selected=d, waiting=waiting, fixing=fixing)
 
     @app.post("/reviewer")
     def set_reviewer(reviewer: str = Form("")):

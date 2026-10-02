@@ -114,12 +114,12 @@ outreach/
   web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, replay, architecture, phone view
     present.py           plain English for the screens: the three lists, trackers, highlights, the small "i" explanations
     replay.py            the replay page: the last run, rebuilt from the audit log
-tests/                   155 tests, one file per step plus end-to-end, screen, alert, decision and web tests
+tests/                   157 tests, one file per step plus end-to-end, screen, alert, decision and web tests
 ```
 
 Python, FastAPI, SQLite and server-rendered pages, styled with patterns from the GOV.UK Design System in our own look. No LangChain, no agents, no queue: each step is a function you can point at and test.
 
-The screens: **Overview** (your to-do list, then each step as "19 of 24 doctors fit the campaign"), **Doctors** (search, filters, a tracker per doctor, a Decide button for doctors the rules couldn't place, Download CSV or Copy for Google Sheets), **Review emails** (one at a time), **Outreach log**, a **Run** page that reports progress, a **Replay** page that plays the last run back from the audit log (Space plays, F is full screen), a **Production architecture** page (footer link) and a **phone view**. Light by default, with a dark switch.
+The screens: **Overview** (your to-do list, then each step as "19 of 24 doctors fit the campaign"), **Doctors** (search, filters, a tracker per doctor, a Decide button for doctors the rules couldn't place, Download CSV or Copy for Google Sheets), **Review emails** (one at a time, with the lists beside it 10 names a page), **Outreach log**, a **Run** page that reports progress, a **Replay** page that plays the last run back from the audit log (Space plays, F is full screen), a **Production architecture** page (footer link) and a **phone view**. Light by default, with a dark switch.
 
 ## Honest limitations
 
