@@ -37,17 +37,11 @@ def test_the_whole_workflow_from_research_list_to_outreach_log(page: Page, app_u
     page.get_by_role("button", name="Approve this email").click()
     expect(page.get_by_text("Approved. It goes out when someone clicks Send approved.")).to_be_visible()
 
-    # Sending can't be undone, so the browser asks first.
-    asked = []
-
-    def say_yes(dialog):
-        asked.append(dialog.message)
-        dialog.accept()
-
-    page.once("dialog", say_yes)
+    # Sending can't be undone, so the page asks first, in a box of its own rather than a browser pop-up.
     page.get_by_role("button", name="Send approved (1)").click()
+    expect(page.get_by_text("Send 1 approved email now?")).to_be_visible()
+    page.get_by_role("button", name="Yes, send them").click()
     expect(page.get_by_text("1 email saved to the outbox folder.")).to_be_visible()
-    assert asked == ["Send 1 approved email now? This can’t be undone."]
     # Sending wrote to the outreach log, which the next campaign's "Not previously contacted?" step reads.
     expect(page.locator("#sent tbody").get_by_text("sent", exact=True)).to_be_visible()
 

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% set active = "overview" %}
 {% block title %}Overview{% endblock %}
+{% from "_confirm.html" import confirm_button %}
 
 {% macro how_box(key, label, how) %}
 <div class="info-pop" id="how-{{ key }}" popover>
@@ -48,9 +49,9 @@
   <form method="post" action="/run"><button class="primary" {{ 'disabled' if run.running }}>Run the pipeline</button></form>
   {% if counts %}<a class="button" href="/doctors?show=final">Open the final list</a>
   <a class="button" href="/replay">Watch the replay</a>{% endif %}
-  <form method="post" action="/reset" onsubmit="return confirm('Empty the database and start the demo again?')">
-    <button class="quiet">Reset demo</button>
-  </form>
+  {{ confirm_button("confirm-reset", "Reset demo", "Reset the demo?",
+       "This goes back to the starting list and drafts." if demo_online else "This empties everything, so you start again from the beginning.",
+       "/reset", "Yes, reset", "quiet") }}
 </div>
 <ul class="actions-help">
   <li><strong>Run the pipeline</strong> checks the research list and drafts an email for each doctor who passes. Nothing is sent until a person approves it.</li>
@@ -97,7 +98,8 @@
         {% if to_send %}
           <li><span class="todo-count">{{ to_send }}</span>
             <span class="todo-text"><strong>Send {{ to_send }} approved email{{ 's' if to_send != 1 }}</strong><span>Each one goes out once and is logged.</span></span>
-            <form method="post" action="/send" onsubmit="return confirm('Send {{ to_send }} approved email{{ 's' if to_send != 1 }} now? This can’t be undone.')"><button>Send</button></form></li>
+            {{ confirm_button("confirm-send", "Send", "Send " ~ to_send ~ " approved email" ~ ("s" if to_send != 1 else "") ~ " now?",
+                "This can’t be undone. Each one goes out once and is logged.", "/send", "Yes, send") }}</li>
         {% endif %}
       </ul>
     {% else %}

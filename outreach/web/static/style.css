@@ -133,6 +133,7 @@ button.info:hover { background: var(--accent); color: var(--card); }
 .info-pop { max-width: min(26rem, calc(100vw - 32px)); margin: auto; padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--card); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); }
 .info-pop p { margin: 0 0 10px; }
 .info-pop::backdrop { background: rgba(0, 0, 0, 0.3); }
+.confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
 input, select, textarea { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-radius: 6px; padding: 8px 10px; }
 label { font-weight: 600; font-size: 0.9rem; }
 .field-hint { display: block; font-weight: 400; font-size: 0.86rem; color: var(--muted); margin: 1px 0 2px; overflow-wrap: anywhere; }
@@ -163,7 +164,7 @@ label { font-weight: 600; font-size: 0.9rem; }
 .todo li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
 .todo li:first-child { border-top: 0; padding-top: 0; }
 .todo form { margin: 0; }
-.todo li > .button, .todo li > form > button { min-width: 7.5rem; text-align: center; } /* every to-do button the same size */
+.todo li > .button, .todo li > button, .todo li > form > button { min-width: 7.5rem; text-align: center; } /* every to-do button the same size */
 .todo-count { font-size: 1.4rem; font-weight: 700; text-align: center; color: var(--accent); font-variant-numeric: tabular-nums; }
 .todo-text strong { display: block; }
 .todo-text span { display: block; color: var(--muted); font-size: 0.93rem; }
@@ -399,7 +400,7 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
   .card { padding: 14px; }
   .doctor { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .todo li { grid-template-columns: 40px minmax(0, 1fr); }
-  .todo li > .button, .todo li > form { grid-column: 2; justify-self: start; }
+  .todo li > .button, .todo li > button, .todo li > form { grid-column: 2; justify-self: start; }
   .summary-list > div { grid-template-columns: minmax(0, 1fr); }
   .decide-grid { grid-template-columns: minmax(0, 1fr); }
   .phone iframe { width: min(390px, calc(100vw - 56px)); }

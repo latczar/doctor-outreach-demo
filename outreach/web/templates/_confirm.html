@@ -1,0 +1,13 @@
+{# "Are you sure?" for a step that can't be undone. The button opens a small box on the page (the HTML popover
+   attribute) rather than the browser's own pop-up, which some browsers block without saying so. #}
+{% macro confirm_button(id, label, question, detail, action, yes, button_class="") %}
+<button type="button" class="{{ button_class }}" popovertarget="{{ id }}">{{ label }}</button>
+<div class="info-pop confirm-pop" id="{{ id }}" popover>
+  <p><strong>{{ question }}</strong></p>
+  <p>{{ detail }}</p>
+  <form method="post" action="{{ action }}" class="confirm-actions">
+    <button class="primary">{{ yes }}</button>
+    <button type="button" popovertarget="{{ id }}" popovertargetaction="hide">Cancel</button>
+  </form>
+</div>
+{% endmacro %}
