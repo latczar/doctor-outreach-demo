@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `157 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `159 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -35,9 +35,38 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 .venv\Scripts\python -m pytest -m e2e -k workflow --headed --slowmo 500
 ```
 
+## Optional: upload a fresh list (1 to 2 minutes)
+
+Shows the steps working on a list the system has never seen. Two made-up lists are in the `samples` folder:
+
+- `demo-quick.csv`: 6 rows, about a minute. Ruth Adeyinka is listed twice and merged, Peter Lund (dermatology) is turned away, and 4 emails are written, including "Dear Ms Dunmore" for the surgeon.
+- `demo-every-rule.csv`: 14 rows, where every rule stops someone for a different reason. Use this one if there's time.
+
+On the Overview, open **Use your own research list**, choose the file, leave **Start fresh** ticked and click **Upload and run**. What happens to `demo-every-rule.csv`:
+
+| Row | What happens | Say |
+|---|---|---|
+| Amara Osei, twice | Merged into one doctor: the same registration number, the email in capitals | "Copies are merged, not deleted." |
+| Rory Kearns | "ST6", "A&E" and "England" are understood, and he's on the final list | "Messy data is cleaned before the rules see it." |
+| Owen Hale | No email in the list. It's worked out from Eastbrook's pattern, checked, and he's "Dear Mr Hale" | "Finding an email and trusting it are separate steps." |
+| Fiona Ashdown | Not a fit: FY2 is too junior | |
+| Hugo Laurent | Not a fit: based in France | |
+| Megan Holt | Needs you: "Clinical Lead" isn't a grade the rules know | "When the rules can't tell, a person decides." |
+| Ravi Sethi | No email, and Hillcrest Surgery's pattern is unknown | |
+| Joanna Hartley | Bad email: `enquiries@` is a shared inbox | |
+| Tomasz Nowak | Bad email: the domain has no mail server | |
+| Alice Brennan | Needs you: Greyfriars accepts every address, so a person confirms the mailbox | |
+| Ben Carter | Stopped: an earlier campaign emailed him in August | "Earlier campaigns still protect people in a brand-new list." |
+| Laura Simmons | Stopped: she asked not to be contacted | |
+| Kofi Mensah | Urgent alert: his profile tries to give the system orders, and his email is checked like any other | "Same defence, new list." |
+
+The result: 14 rows become 13 doctors, 4 emails are written (Amara, Rory, Owen and Kofi, unless Kofi's fails the checks), and 2 doctors wait under Needs you. Decide on them to finish the story. Afterwards, **Reset demo** then **Run the pipeline** brings back the main list.
+
+If they ask how the made-up hospitals pass the email checks: "A stand-in answers for made-up hospitals, the same one the main list uses. Real domains get a real mail-server check." A test, `tests/test_samples.py`, proves every row ends where this table says.
+
 ## How I tested it (a good story to tell)
 
-- 157 automated tests run in about 15 seconds with a fake model, so they never call an AI.
+- 159 automated tests run in about 15 seconds with a fake model, so they never call an AI.
 - 4 browser tests (Playwright, in `tests/e2e`) click through the real pages in Chromium: the whole workflow from research list to outreach log, an edit that's refused, a Decide re-check, and every main page at phone width. Each starts its own copy of the app with a fresh database, so the demo data is never touched. `pytest -m e2e` runs them in about 15 seconds.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.

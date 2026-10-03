@@ -19,6 +19,14 @@
     },
     "riversideclinic.example": {"mx": true, "catch_all": false, "mailboxes": ["ben.carter", "s.wright"]},
     "lakeshoregeneral.example": {"mx": true, "catch_all": false, "mailboxes": ["aisha.malik"]},
-    "westmere-health.example": {"mx": false, "catch_all": false, "mailboxes": []}
+    "westmere-health.example": {"mx": false, "catch_all": false, "mailboxes": []},
+    "eastbrook.nhs.example": {
+      "mx": true,
+      "catch_all": false,
+      "mailboxes": ["amara.osei", "rory.kearns", "owen.hale", "fiona.ashdown", "megan.holt", "kofi.mensah",
+                    "ruth.adeyinka", "ellen.ford", "clare.dunmore", "peter.lund"]
+    },
+    "millbrookpractice.example": {"mx": true, "catch_all": false, "mailboxes": ["s.haddad"]},
+    "greyfriars.nhs.example": {"mx": true, "catch_all": true, "mailboxes": []}
   }
 }

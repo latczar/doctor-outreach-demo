@@ -5,6 +5,7 @@ __pycache__/
 .env
 outbox/
 uploads/
+samples/
 exports/
 tests/
 docs/demo-script.md

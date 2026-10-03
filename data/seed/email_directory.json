@@ -6,6 +6,9 @@
     "st aldrics childrens hospital": {"domain": "staldrics.nhs.example", "pattern": "first.last"},
     "harrowgate medical practice": {"domain": "harrowgatepractice.example", "pattern": "first.last"},
     "riverside private clinic": {"domain": "riversideclinic.example", "pattern": "f.last"},
-    "westmere health partnership": {"domain": "westmere-health.example", "pattern": "f.last"}
+    "westmere health partnership": {"domain": "westmere-health.example", "pattern": "f.last"},
+    "eastbrook teaching hospitals nhs trust": {"domain": "eastbrook.nhs.example", "pattern": "first.last"},
+    "millbrook medical practice": {"domain": "millbrookpractice.example", "pattern": "f.last"},
+    "greyfriars hospital nhs trust": {"domain": "greyfriars.nhs.example", "pattern": "first.last"}
   }
 }
