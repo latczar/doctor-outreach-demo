@@ -22,7 +22,7 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 6. **Open Review emails** and type your name once. "Blue is the personalised draft the system wrote, grey is the standard footer, yellow is the personal detail. The highlight comes from the same function as the personalised check." Open **Edit before approving**, add `[DATE]`, click Approve: refused, edit kept. Approve two or three; reject one with a reason.
 7. **Open the Needs you tab and click Decide on Hannah Lewis.** Her trust's domain accepts every address, so no computer can confirm the mailbox. Tick "I've confirmed this mailbox exists", note "called the trust switchboard", and re-check: "The rules run again with my confirmation, she joins the final list, and the system writes her email." Then on Isla McKenzie, pick a grade the campaign doesn't target: the rules still say no.
 8. **Click Mohammed Iqbal under Need fixing.** The red sentence is the planted instruction. "The prompt reduces the risk; code enforces the rule." Online, open his doctor page and expand Attempt 1: it offered £2,000 and claimed to be an "official NHS partner", and the checks stopped both. On your laptop, if his draft passed this run, read it out: no £2,000 and no partnership claim.
-9. **Click Send approved, then open Outreach log.** The email lands in your inbox within seconds, so show it on your phone: "Every email is redirected to my inbox, and Resend's test mode only delivers to me, so no doctor can get one." Then: "Each send is claimed with a unique key before it happens, and the do-not-contact list is checked again at send time." To prove nothing is sent twice:
+9. **Click Send approved, then open Outreach log.** The browser asks first, "Send 3 approved emails now? This can’t be undone.", because it's the one step you can't take back. The email lands in your inbox within seconds, so show it on your phone: "Every email is redirected to my inbox, and Resend's test mode only delivers to me, so no doctor can get one." Then: "Each send is claimed with a unique key before it happens, and the do-not-contact list is checked again at send time." To prove nothing is sent twice:
 
 ```powershell
 .venv\Scripts\python -m pytest -k "sends_twice or stuck" -v
@@ -119,6 +119,9 @@ An approved email that failed to send, and a scraped profile that tries to give 
 
 **Why GOV.UK patterns?**
 They were built and tested with real users to make multi-step services clear to anyone. I borrowed the patterns, not the look: services outside GOV.UK mustn't use its crown, typeface or colours, and an official-looking tool would be a bad idea here.
+
+**Is it accessible?**
+I checked every page against Vercel's Web Interface Guidelines, about 80 rules on accessibility, focus, forms and motion, and fixed what they found: form fields tell the browser what they hold, the spinner stops for people who ask their computer for less motion, and Send asks before anything goes out. It already had a skip link, a visible focus outline, a label on every field and zoom allowed. A full WCAG audit with a screen reader would be the next step.
 
 **Can a person overrule the rules?**
 Not directly. They supply the fact the rules were missing, or confirm the one thing a computer can't check (a mailbox on a catch-all domain), and the rules run again from the top. A grade the campaign doesn't target still disqualifies, and a mailbox the mail server rejects stays rejected. Every decision needs a note and a name.

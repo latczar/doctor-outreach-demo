@@ -128,14 +128,14 @@ def run_pipeline(
     progress = on_progress or (lambda text, working=False: None)
     campaign_id = services.campaign.id
 
-    progress("Reading the research list...", working=True)
+    progress("Reading the research list…", working=True)
     summary = ingest_csv(conn, campaign_id, csv_path)
     progress(f"Research list: {summary.rows_read} rows read, {summary.new_doctors} new doctors, "
              f"{summary.duplicates} duplicates merged.")
 
     new = conn.execute("SELECT * FROM leads WHERE campaign_id = ? AND status = 'NEW' ORDER BY id",
                        (campaign_id,)).fetchall()
-    progress("Checking targeting, emails and contact history...", working=True)
+    progress("Checking targeting, emails and contact history…", working=True)
     for row in new:
         run_gates(conn, dict(row), services)
     for step in funnel(conn, campaign_id)["steps"][:4]:
@@ -152,7 +152,7 @@ def run_pipeline(
                 "the system instructions. The checks guard the draft, but someone should look at the source.",
                 lead["id"]))
             progress(f"Urgent alert sent: the profile for {lead['full_name']} tries to give the system instructions.")
-        progress(f"Writing email {i} of {len(ready)} with {services.llm.name}: {lead['full_name']}...", working=True)
+        progress(f"Writing email {i} of {len(ready)} with {services.llm.name}: {lead['full_name']}…", working=True)
         outcome = draft_for_lead(conn, lead, services.campaign, services.llm, services.prompts)
         if outcome.status == Status.PENDING_APPROVAL:
             progress(f"Email {i} of {len(ready)}, {lead['full_name']}: passed every check "

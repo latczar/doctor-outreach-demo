@@ -45,12 +45,12 @@
         </label>
         <label>Better email (optional)
           <span class="field-hint">Now: {{ lead.email or 'none' }}. Leave this blank to keep it.</span>
-          <input name="email" type="email" value="{{ values.get('email', '') }}">
+          <input name="email" type="email" value="{{ values.get('email', '') }}" autocomplete="off" spellcheck="false">
         </label>
       {% else %}
         <label>Different email (optional)
           <span class="field-hint">Now: {{ lead.email or 'none' }}. Leave this blank to keep it.</span>
-          <input name="email" type="email" value="{{ values.get('email', '') }}">
+          <input name="email" type="email" value="{{ values.get('email', '') }}" autocomplete="off" spellcheck="false">
         </label>
         <label class="check">
           <input type="checkbox" name="confirm_email" value="yes" {{ 'checked' if values.get('confirm_email') }}>
@@ -60,10 +60,10 @@
       {% endif %}
       <label>What did you check?
         <span class="field-hint">For example: checked the trust's staff directory</span>
-        <input name="note" value="{{ values.get('note', '') }}" required>
+        <input name="note" value="{{ values.get('note', '') }}" required autocomplete="off">
       </label>
       <label>Your name
-        <input name="reviewer" value="{{ reviewer }}" required>
+        <input name="reviewer" value="{{ reviewer }}" required autocomplete="name">
       </label>
       <button class="primary">Re-check with these details</button>
     </form>
@@ -73,10 +73,10 @@
       <p class="muted small">For a doctor who shouldn't be contacted in this campaign.</p>
       <label>Reason
         <span class="field-hint">For example: not a clinical role</span>
-        <input name="note" value="{{ values.get('remove_note', '') }}" required>
+        <input name="note" value="{{ values.get('remove_note', '') }}" required autocomplete="off">
       </label>
       <label>Your name
-        <input name="reviewer" value="{{ reviewer }}" required>
+        <input name="reviewer" value="{{ reviewer }}" required autocomplete="name">
       </label>
       <button class="danger">Take off the list</button>
     </form>

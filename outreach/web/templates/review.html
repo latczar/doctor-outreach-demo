@@ -60,7 +60,7 @@
       <details class="edit" {{ 'open' if edits.get(d.id) or mode == 'attention' }}>
         <summary>Edit before approving</summary>
         <label>Subject
-          <input name="subject" value="{{ edits.get(d.id, {}).get('subject', d.subject or '') }}">
+          <input name="subject" value="{{ edits.get(d.id, {}).get('subject', d.subject or '') }}" autocomplete="off">
         </label>
         <label>Body
           <span class="field-hint">Must start "Dear {{ item.salutation }},". Your edit goes through the same checks.</span>
@@ -76,7 +76,7 @@
         <input type="hidden" name="reviewer" value="{{ reviewer }}">
         <label>Instruction for the new draft (optional)
           <span class="field-hint">For example: shorter, and mention their teaching course</span>
-          <input name="instruction">
+          <input name="instruction" autocomplete="off">
         </label>
         <button {{ 'disabled' if not reviewer }}>Write another draft</button>
       </form>
@@ -84,7 +84,7 @@
         <input type="hidden" name="reviewer" value="{{ reviewer }}">
         <label>Reason for rejecting
           <span class="field-hint">For example: not a good fit after all</span>
-          <input name="note" required>
+          <input name="note" required autocomplete="off">
         </label>
         <button class="danger" {{ 'disabled' if not reviewer }}>Reject</button>
       </form>
@@ -124,7 +124,7 @@
   {% if reviewer %}
     <span>Reviewing as <strong>{{ reviewer }}</strong>. Every decision is recorded against this name.</span>
     <details><summary>Change</summary>
-      <input name="reviewer" value="{{ reviewer }}" aria-label="Your name"> <button>Save</button>
+      <input name="reviewer" value="{{ reviewer }}" aria-label="Your name" autocomplete="name"> <button>Save</button>
     </details>
   {% else %}
     <label>Your name
@@ -158,7 +158,7 @@
         <h2>Approved, not sent <span class="count">{{ approved | length }}</span></h2>
         <ul class="queue-list done">{% for item in approved[:approved_shown] %}<li><a href="/leads/{{ item.lead.id }}">{{ item.lead.title }} {{ item.lead.full_name }}<span class="muted small">approved by {{ item.draft.reviewer }}</span></a></li>{% endfor %}</ul>
         {{ approved_names(approved, approved_shown) }}
-        <form method="post" action="/send"><button class="primary">Send approved ({{ approved | length }})</button></form>
+        <form method="post" action="/send" onsubmit="return confirm('Send {{ approved | length }} approved email{{ 's' if approved | length != 1 }} now? This can’t be undone.')"><button class="primary">Send approved ({{ approved | length }})</button></form>
       {% endif %}
     </aside>
     <div class="current">
@@ -177,7 +177,7 @@
     <h2>Approved, not sent <span class="count">{{ approved | length }}</span></h2>
     <ul class="plain">{% for item in approved[:approved_shown] %}<li><a href="/leads/{{ item.lead.id }}">{{ item.lead.full_name }}</a> <span class="muted">approved by {{ item.draft.reviewer }}{% if item.draft.edited_by_reviewer %}, edited{% endif %}</span></li>{% endfor %}</ul>
     {{ approved_names(approved, approved_shown) }}
-    <form method="post" action="/send"><button class="primary">Send approved ({{ approved | length }})</button></form>
+    <form method="post" action="/send" onsubmit="return confirm('Send {{ approved | length }} approved email{{ 's' if approved | length != 1 }} now? This can’t be undone.')"><button class="primary">Send approved ({{ approved | length }})</button></form>
   </div>
 {% else %}
   <div class="card empty"><p>Nothing to review. Run the pipeline from the <a href="/">overview</a>.</p></div>

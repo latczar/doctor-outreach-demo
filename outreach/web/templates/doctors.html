@@ -21,7 +21,7 @@
 
 <form class="card search" method="get" action="/doctors" role="search">
   <label class="grow">Search by name, employer, specialty or email
-    <input type="search" name="q" value="{{ filters.q }}">
+    <input type="search" name="q" value="{{ filters.q }}" autocomplete="off" spellcheck="false">
   </label>
   <label>Specialty
     <select name="specialty">

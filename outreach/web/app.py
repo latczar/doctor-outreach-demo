@@ -262,7 +262,7 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         with state.lock:
             if state.running:
                 return RedirectResponse("/run", status_code=303)
-            state.running, state.lines, state.current, state.error = True, [], "Starting...", None
+            state.running, state.lines, state.current, state.error = True, [], "Starting…", None
 
         def work() -> None:
             conn = connect(settings.db_path)

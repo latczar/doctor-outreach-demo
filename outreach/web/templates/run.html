@@ -12,7 +12,7 @@
   {% if run.lines or run.running %}
     <ol class="run-log">
       {% for line in run.lines %}<li class="done">{{ line }}</li>{% endfor %}
-      {% if run.running %}<li class="working"><span class="spinner"></span>{{ run.current or 'Working...' }}</li>{% endif %}
+      {% if run.running %}<li class="working"><span class="spinner"></span>{{ run.current or 'Working…' }}</li>{% endif %}
     </ol>
   {% else %}
     <p>Start a run from the <a href="/">overview</a>.</p>

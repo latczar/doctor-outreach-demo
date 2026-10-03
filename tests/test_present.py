@@ -230,6 +230,7 @@ def test_the_approved_list_names_five_and_counts_the_rest(client, conn, campaign
         approve(conn, draft_id, "Lat", campaign)
     page = client.get("/review").text
     assert "Approved, not sent" in page and "and 2 more" in page and "Send approved (7)" in page
+    assert "Send 7 approved emails now? This can’t be undone." in page  # the browser asks before sending
 
 
 def test_run_page_reports_each_step_and_other_pages_never_reload(settings, conn):

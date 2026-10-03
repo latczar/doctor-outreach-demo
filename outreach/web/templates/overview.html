@@ -97,7 +97,7 @@
         {% if to_send %}
           <li><span class="todo-count">{{ to_send }}</span>
             <span class="todo-text"><strong>Send {{ to_send }} approved email{{ 's' if to_send != 1 }}</strong><span>Each one goes out once and is logged.</span></span>
-            <form method="post" action="/send"><button>Send</button></form></li>
+            <form method="post" action="/send" onsubmit="return confirm('Send {{ to_send }} approved email{{ 's' if to_send != 1 }} now? This can’t be undone.')"><button>Send</button></form></li>
         {% endif %}
       </ul>
     {% else %}

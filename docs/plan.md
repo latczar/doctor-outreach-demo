@@ -226,6 +226,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 - **Downloads match the screen:** the CSV and the Google Sheets copy use the same filter function as the Doctors page.
 - **Safe with web data.** Templates escape everything; the highlighter escapes each piece before adding its own tags; a test proves a hidden `<img onerror=...>` comes out as plain text.
 - **No decisions in the screens.** `present.py` only formats. Every decision is in the steps in section 4.
+- **Checked against Vercel's Web Interface Guidelines** (about 80 rules on accessibility, focus, forms and motion). The fixes: Send asks before anything goes out, form fields tell the browser what they hold, and the spinner stops for people who ask their computer for less motion.
 - **Urgent alerts go through one hook** (`notify.py`): a file locally, or a webhook that n8n or Zapier forwards to WhatsApp, Slack or Teams. A failed alert is logged and never stops the work.
 
 ## 10. What a production version would add
