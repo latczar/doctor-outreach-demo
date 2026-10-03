@@ -114,7 +114,7 @@ def test_an_uploaded_list_runs_through_the_same_steps(settings, monkeypatch):
     upload = f"{','.join(FIELDS)}\n{ROW}\n".encode()
     client.post("/upload", files={"file": ("my list.csv", upload, "text/csv")}, data={"fresh": "yes"})
 
-    assert "Research list: 1 rows read, 1 new doctors" in wait_for_run(client)
+    assert "Research list: 1 row read, 1 new doctor, 0 duplicates merged." in wait_for_run(client)
     conn = connect(settings.db_path)
     try:
         sam = dict(conn.execute("SELECT * FROM leads WHERE full_name = 'Sam Okoro'").fetchone())

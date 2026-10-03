@@ -118,6 +118,11 @@ def run_gates(conn: sqlite3.Connection, lead: dict, services: Services,
 Progress = Callable[..., None]  # progress(text, working=False): working = still going, shown with a spinner
 
 
+def counted(n: int, one: str, many: str) -> str:
+    """"1 row" and "3 rows", so the run report reads as a sentence."""
+    return f"{n} {one if n == 1 else many}"
+
+
 def run_pipeline(
     conn: sqlite3.Connection,
     services: Services,
@@ -130,8 +135,9 @@ def run_pipeline(
 
     progress("Reading the research list…", working=True)
     summary = ingest_csv(conn, campaign_id, csv_path)
-    progress(f"Research list: {summary.rows_read} rows read, {summary.new_doctors} new doctors, "
-             f"{summary.duplicates} duplicates merged.")
+    progress(f"Research list: {counted(summary.rows_read, 'row', 'rows')} read, "
+             f"{counted(summary.new_doctors, 'new doctor', 'new doctors')}, "
+             f"{counted(summary.duplicates, 'duplicate', 'duplicates')} merged.")
 
     new = conn.execute("SELECT * FROM leads WHERE campaign_id = ? AND status = 'NEW' ORDER BY id",
                        (campaign_id,)).fetchall()

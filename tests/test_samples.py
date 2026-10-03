@@ -26,7 +26,9 @@ def test_the_quick_list_merges_a_copy_turns_away_a_misfit_and_drafts_four_emails
 
 def test_the_every_rule_list_stops_someone_at_each_step_for_a_different_reason(conn, services, tmp_path):
     services.notifier = FileNotifier(tmp_path / "alerts.log")
-    run_pipeline(conn, services, SAMPLES / "demo-every-rule.csv")
+    report = []
+    run_pipeline(conn, services, SAMPLES / "demo-every-rule.csv", lambda text, working=False: report.append(text))
+    assert "Research list: 14 rows read, 13 new doctors, 1 duplicate merged." in report
     assert statuses(conn) == [
         ("Amara Osei", Status.PENDING_APPROVAL),
         ("Amara Osei", Status.DUPLICATE),  # same registration number, email in capitals
