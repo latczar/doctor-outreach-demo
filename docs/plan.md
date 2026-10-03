@@ -165,6 +165,7 @@ Small tidy-ups are fixed by code and logged instead of retried. For example, the
 | Ollama with qwen2.5 7B | Free, runs on your PC, about 3 seconds per email |
 | Claude (optional) | The hosted option behind the same interface |
 | pytest with a fake model | Tests are fast and never call an AI |
+| Playwright browser tests | 4 tests click through the real pages in Chromium, from research list to outreach log. Laptop only, run with `pytest -m e2e` |
 
 No LangChain, no queue, no agents. Each step is a function you can point at.
 

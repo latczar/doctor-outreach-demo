@@ -69,7 +69,8 @@ To update it: `vercel deploy --prod`. To rebuild the snapshot, run the pipeline 
 | `python -m outreach send` | Sends every approved email |
 | `python -m outreach export [--all]` | Writes the final list to `exports/` as CSV |
 | `python -m outreach serve` | Starts the dashboard on http://localhost:8000 |
-| `python -m pytest` | Runs the tests (no AI calls; about 10 seconds) |
+| `python -m pytest` | Runs the tests (no AI calls; about 15 seconds) |
+| `python -m pytest -m e2e` | Runs the 4 browser tests in Chromium (laptop only). Add `--headed --slowmo 500` to watch them |
 
 Prefix each with `.venv\Scripts\` on Windows if the virtual environment isn't activated.
 
@@ -114,7 +115,8 @@ outreach/
   web/                   FastAPI + Jinja pages: overview, doctors, review, doctor, log, run, replay, architecture, phone view
     present.py           plain English for the screens: the three lists, trackers, highlights, the small "i" explanations
     replay.py            the replay page: the last run, rebuilt from the audit log
-tests/                   157 tests, one file per step plus end-to-end, screen, alert, decision and web tests
+tests/                   157 tests, one file per step plus end-to-end, screen, alert, decision and web tests;
+                         tests/e2e holds the 4 browser tests (Playwright)
 ```
 
 Python, FastAPI, SQLite and server-rendered pages, styled with patterns from the GOV.UK Design System in our own look. No LangChain, no agents, no queue: each step is a function you can point at and test.

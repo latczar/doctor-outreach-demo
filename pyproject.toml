@@ -19,3 +19,6 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# The browser tests are laptop only and opt-in: `pytest -m e2e` runs them, a plain `pytest` skips them.
+addopts = "-m 'not e2e'"
+markers = ["e2e: browser tests in tests/e2e, run with pytest -m e2e (needs Playwright)"]

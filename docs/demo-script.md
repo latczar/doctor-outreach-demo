@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `157 passed`.
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `157 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -29,10 +29,16 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 ```
 
 10. **Click See this page at phone size** in the footer. "One layout that rearranges itself, with every hint above its field, so there's no separate app to maintain."
+11. **Optional, about a minute: watch the workflow test itself.** A browser opens on its own copy of the app, runs the pipeline, approves an email, sends it and checks the log. "Fast tests check every rule. A few browser tests check what a reviewer actually clicks."
+
+```powershell
+.venv\Scripts\python -m pytest -m e2e -k workflow --headed --slowmo 500
+```
 
 ## How I tested it (a good story to tell)
 
-- 157 automated tests run in about 14 seconds with a fake model, so they never call an AI.
+- 157 automated tests run in about 15 seconds with a fake model, so they never call an AI.
+- 4 browser tests (Playwright, in `tests/e2e`) click through the real pages in Chromium: the whole workflow from research list to outreach log, an edit that's refused, a Decide re-check, and every main page at phone width. Each starts its own copy of the app with a fresh database, so the demo data is never touched. `pytest -m e2e` runs them in about 15 seconds.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.
   2. Telling a small model "don't write 'I hope you are well'" made it write exactly that. I reworded it positively, and code now deletes that filler sentence and logs it, rather than retrying.
