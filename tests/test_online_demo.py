@@ -25,6 +25,7 @@ def test_a_fresh_online_server_starts_from_the_snapshot(settings, services, tmp_
     client = TestClient(create_app(online, llm=TemplateLLM()))
     page = client.get("/").text
     assert "Online prototype with made-up data" in page and 'popovertarget="about-online"' in page
+    assert "Laptop copy" not in page
     assert "19 of 24 doctors fit the campaign" in page
 
     # Approve one email, so there's a change to undo.
@@ -45,7 +46,8 @@ def test_a_fresh_online_server_starts_from_the_snapshot(settings, services, tmp_
 
 def test_the_local_app_shows_no_online_banner(settings, conn):
     client = TestClient(create_app(replace(settings), llm=TemplateLLM()))
-    assert "Online prototype" not in client.get("/").text
+    page = client.get("/").text
+    assert "Online prototype" not in page and "Laptop copy:" in page and 'popovertarget="about-laptop"' in page
 
 
 def test_the_online_copy_never_sends_real_email(monkeypatch):

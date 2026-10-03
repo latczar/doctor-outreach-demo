@@ -64,6 +64,7 @@ SENDS_PER_PAGE = 20  # outreach log: emails sent
 EVENTS_PER_PAGE = 25  # outreach log: everything that happened
 QUEUE_PER_PAGE = 10  # review: names in each list beside the email
 APPROVED_SHOWN = 5  # review: approved names listed above the Send button
+CHAT_VIEWS = {"slack": "Slack", "teams": "Microsoft Teams", "whatsapp": "WhatsApp"}  # team alerts preview
 
 
 class RunState:
@@ -596,6 +597,28 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
             conn.close()
         return redirect("/doctors?show=needs", "Removed from the list. Your reason is saved on the record.",
                         reviewer=reviewer)
+
+    @app.get("/alerts", response_class=HTMLResponse)
+    def alerts_page(request: Request, view: str = "slack"):
+        """The urgent alerts as a team chat would show them. A preview: nothing is sent from this page."""
+        view = view if view in CHAT_VIEWS else "slack"
+        conn = connect(settings.db_path)
+        try:
+            alerts = []
+            for row in conn.execute("""SELECT a.at, a.lead_id, a.detail, l.full_name FROM audit_log a
+                                       LEFT JOIN leads l ON l.id = a.lead_id
+                                       WHERE a.event = 'alert.raised' ORDER BY a.id"""):
+                detail = loads(row["detail"], {})
+                alerts.append({"at": row["at"], "lead_id": row["lead_id"], "name": row["full_name"],
+                               "kind": detail.get("kind", ""), "text": detail.get("text", "")})
+            # Exactly what the hook posts for the latest alert, for whoever sets up n8n or Zapier.
+            latest = alerts[-1] if alerts else None
+            payload = json.dumps({"kind": latest["kind"], "text": latest["text"], "lead_id": latest["lead_id"]},
+                                 indent=2, ensure_ascii=False) if latest else ""
+            return render(request, "alerts.html", conn, alerts=alerts, view=view, chat_views=CHAT_VIEWS,
+                          payload=payload, webhook=bool(settings.alert_webhook_url))
+        finally:
+            conn.close()
 
     @app.get("/log", response_class=HTMLResponse)
     def log_page(request: Request, sent: str = "1", events: str = "1"):

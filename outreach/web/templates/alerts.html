@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set active = "log" %}
+{% block title %}Team alerts{% endblock %}
+{% set titles = {"suspicious_profile": "Suspicious profile", "send_failed": "An email failed to send"} %}
+{% block content %}
+<div class="pagehead">
+  <h1>Team alerts</h1>
+  <p class="lead">Urgent alerts leave the app through one hook, and n8n or Zapier posts them to the team's chat. This is how they'd arrive. It's a preview: nothing is sent from this page.</p>
+</div>
+
+<nav class="tabs" aria-label="Chat app">
+  {% for key, label in chat_views.items() %}
+    <a href="/alerts?view={{ key }}" class="{{ 'on' if view == key }}"{% if view == key %} aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<section class="chat chat-{{ view }}" aria-label="{{ chat_views[view] }} preview">
+  <header class="chat-head">
+    {% if view == "whatsapp" %}<strong>Outreach team</strong><span class="muted small">group chat</span>
+    {% elif view == "teams" %}<strong>Outreach</strong><span class="muted small">Alerts channel</span>
+    {% else %}<strong># outreach-alerts</strong><span class="muted small">Urgent items from the outreach workflow</span>{% endif %}
+  </header>
+  <ol class="chat-messages">
+    {% for a in alerts %}
+      <li class="chat-msg">
+        <img class="chat-avatar" src="/static/logo.svg" width="36" height="36" alt="">
+        <div class="chat-bubble">
+          <p class="chat-meta"><strong>Doctor outreach</strong>{% if view != "whatsapp" %} <span class="chat-tag">App</span>{% endif %} <time datetime="{{ a.at }}">{{ a.at[11:16] }}</time></p>
+          <p class="chat-title">{{ titles.get(a.kind, "Urgent alert") }}</p>
+          <p>{{ a.text }}</p>
+          <p class="chat-actions">
+            {% if a.lead_id %}<a href="/leads/{{ a.lead_id }}">Open {{ a.name or "the doctor" }}</a>{% endif %}
+            <a href="/log#alerts">Outreach log</a>
+          </p>
+        </div>
+      </li>
+    {% else %}
+      <li class="chat-empty">No alerts yet. Run the pipeline: Mohammed Iqbal's profile raises one, and so does Kofi Mensah's in the every-rule sample list.</li>
+    {% endfor %}
+  </ol>
+</section>
+<p class="muted small">A mock-up in this app's own style, not the real {{ chat_views[view] }} app.</p>
+
+<section class="card">
+  <h2>How an alert gets there</h2>
+  <ol class="steps-plain">
+    <li><strong>Something urgent happens:</strong> a profile tries to give the system instructions, or an approved email fails to send.</li>
+    <li><strong>The app sends one small message to a web address,</strong> set in <code>ALERT_WEBHOOK_URL</code>. {% if webhook %}This copy has one set, so alerts go there.{% else %}This copy has none set, so alerts are written to <code>outbox/alerts.log</code> instead.{% endif %}</li>
+    <li><strong>n8n or Zapier passes it on</strong> to a Slack or Teams channel, or a WhatsApp group. Changing the chat app means changing that step, not the code.</li>
+  </ol>
+  {% if payload %}
+    <details class="all-checks"><summary>What the app sends for the latest alert</summary><pre class="payload">{{ payload }}</pre></details>
+  {% endif %}
+</section>
+{% endblock %}

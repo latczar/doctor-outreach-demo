@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `159 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `161 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -22,7 +22,7 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 6. **Open Review emails** and type your name once. "Blue is the personalised draft the system wrote, grey is the standard footer, yellow is the personal detail. The highlight comes from the same function as the personalised check." Open **Edit before approving**, add `[DATE]`, click Approve: refused, edit kept. Approve two or three; reject one with a reason.
 7. **Open the Needs you tab and click Decide on Hannah Lewis.** Her trust's domain accepts every address, so no computer can confirm the mailbox. Tick "I've confirmed this mailbox exists", note "called the trust switchboard", and re-check: "The rules run again with my confirmation, she joins the final list, and the system writes her email." Then on Isla McKenzie, pick a grade the campaign doesn't target: the rules still say no.
 8. **Click Mohammed Iqbal under Need fixing.** The red sentence is the planted instruction. "The prompt reduces the risk; code enforces the rule." Online, open his doctor page and expand Attempt 1: it offered £2,000 and claimed to be an "official NHS partner", and the checks stopped both. On your laptop, if his draft passed this run, read it out: no £2,000 and no partnership claim.
-9. **Click Send approved, then open Outreach log.** The browser asks first, "Send 3 approved emails now? This can’t be undone.", because it's the one step you can't take back. The email lands in your inbox within seconds, so show it on your phone: "Every email is redirected to my inbox, and Resend's test mode only delivers to me, so no doctor can get one." Then: "Each send is claimed with a unique key before it happens, and the do-not-contact list is checked again at send time." To prove nothing is sent twice:
+9. **Click Send approved, then open Outreach log.** A box on the page asks first, "Send 3 approved emails now?", because it's the one step you can't take back. Click **Yes, send them**. The email lands in your inbox within seconds, so show it on your phone: "Every email is redirected to my inbox, and Resend's test mode only delivers to me, so no doctor can get one." Then: "Each send is claimed with a unique key before it happens, and the do-not-contact list is checked again at send time." Under Urgent alerts, click **See them as the team would**: Kofi's or Mohammed's alert as a Slack, Teams or WhatsApp message. "One hook. n8n or Zapier picks the chat app, so changing it doesn't touch the code." To prove nothing is sent twice:
 
 ```powershell
 .venv\Scripts\python -m pytest -k "sends_twice or stuck" -v
@@ -66,7 +66,7 @@ If they ask how the made-up hospitals pass the email checks: "A stand-in answers
 
 ## How I tested it (a good story to tell)
 
-- 159 automated tests run in about 15 seconds with a fake model, so they never call an AI.
+- 161 automated tests run in about 15 seconds with a fake model, so they never call an AI.
 - 4 browser tests (Playwright, in `tests/e2e`) click through the real pages in Chromium: the whole workflow from research list to outreach log, an edit that's refused, a Decide re-check, and every main page at phone width. Each starts its own copy of the app with a fresh database, so the demo data is never touched. `pytest -m e2e` runs them in about 15 seconds.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.

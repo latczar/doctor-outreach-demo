@@ -14,6 +14,7 @@ from outreach.drafting import draft_context
 from outreach.guardrails import personal_overlap
 from outreach.llm.fake import TemplateLLM
 from outreach.models import Status
+from outreach.notify import FileNotifier
 from outreach.pipeline import funnel, run_pipeline
 from outreach.review import approve
 from outreach.sending import OutboxSender, send_approved
@@ -232,6 +233,28 @@ def test_the_approved_list_names_five_and_counts_the_rest(client, conn, campaign
     assert "Approved, not sent" in page and "and 2 more" in page and "Send approved (7)" in page
     assert "Send 7 approved emails now?" in page and "Yes, send them" in page  # the page asks before sending
     assert "confirm(" not in page  # no browser pop-up, which some browsers block without saying so
+
+
+def test_team_alerts_show_each_alert_as_a_chat_message(conn, services, settings, tmp_path):
+    empty = TestClient(create_app(replace(settings), llm=TemplateLLM())).get("/alerts").text
+    assert "No alerts yet" in empty
+
+    services.notifier = FileNotifier(tmp_path / "alerts.log")
+    run_pipeline(conn, services, SEED / "leads_raw.csv")
+    client = TestClient(create_app(replace(settings), llm=TemplateLLM()))
+    page = html.unescape(client.get("/alerts").text)
+    assert "Suspicious profile" in page and "The profile for Mohammed Iqbal" in page and "chat chat-slack" in page
+    assert '"kind": "suspicious_profile"' in page  # exactly what the hook sends
+    assert "chat chat-teams" in client.get("/alerts?view=teams").text
+    assert "chat chat-whatsapp" in client.get("/alerts?view=whatsapp").text
+    assert "chat chat-slack" in client.get("/alerts?view=nonsense").text
+    assert 'href="/alerts"' in client.get("/").text and 'href="/alerts"' in client.get("/log").text
+
+
+def test_messages_after_an_action_arrive_as_a_toast(client):
+    page = client.post("/reviewer", data={"reviewer": "Sam"}).text  # follows the redirect to the Review page
+    assert '<dialog open class="toast ok">' in page and "Reviewing as Sam." in page
+    assert '<form method="dialog">' in page  # closes with no JavaScript
 
 
 def test_run_page_reports_each_step_and_other_pages_never_reload(settings, conn):

@@ -103,6 +103,7 @@ mark.danger { background: var(--bad-soft); color: var(--bad); font-weight: 600; 
 .theme-switch a.on { background: var(--text); color: var(--card); }
 .theme-switch a:not(.on):hover { background: var(--muted-soft); color: var(--text); }
 .demo-banner { padding: 6px 16px; text-align: center; font-size: 0.86rem; background: var(--warn-soft); color: var(--warn); border-bottom: 1px solid var(--line); }
+.demo-banner.laptop { background: var(--accent-soft); color: var(--accent); }
 .run-banner { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 8px 16px; background: var(--waiting-soft); color: var(--waiting); font-weight: 600; }
 
 main { max-width: 1200px; margin: 0 auto; padding: 16px 24px 24px; }
@@ -143,6 +144,21 @@ label { font-weight: 600; font-size: 0.9rem; }
 .banner.warn { border-color: var(--warn-strong); }
 .banner.bad { border-color: var(--bad); }
 .banner.info { border-color: var(--waiting); }
+/* Messages after an action: a toast in the top-right corner (the bottom on a phone). A success fades after 6 seconds
+   unless the pointer or keyboard is on it; a warning or problem stays until closed. It's a <dialog> that's open when the
+   page arrives and closed by its own button, so it needs no JavaScript. */
+.toast[open] { position: fixed; top: 70px; right: 20px; bottom: auto; left: auto; z-index: 30; margin: 0; width: min(25rem, calc(100vw - 32px)); padding: 12px 44px 12px 16px; border: 1px solid var(--line-strong); border-left: 6px solid var(--good); border-radius: var(--radius); background: var(--card); color: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); animation: toast-in 0.25s ease-out; }
+.toast div { display: grid; gap: 2px; }
+.toast.warn { border-left-color: var(--warn-strong); }
+.toast.bad { border-left-color: var(--bad); }
+.toast.ok[open] { animation: toast-in 0.25s ease-out, toast-out 0.4s ease 6s forwards; }
+.toast.ok:hover, .toast.ok:focus-within { animation-play-state: paused; }
+.toast form { margin: 0; }
+.toast-close { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; box-shadow: none; color: var(--muted); font-size: 1.4rem; line-height: 1; }
+.toast-close:hover { background: var(--muted-soft); color: var(--text); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
+@keyframes toast-out { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .toast[open] { animation: none; } .toast.ok[open] { animation: toast-out 0s linear 8s forwards; } }
 .error-summary { border: 3px solid var(--bad); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; background: var(--card); }
 .error-summary h3 { color: var(--bad); margin-bottom: 4px; }
 .error-summary p { margin: 0; }
@@ -404,8 +420,29 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
   .summary-list > div { grid-template-columns: minmax(0, 1fr); }
   .decide-grid { grid-template-columns: minmax(0, 1fr); }
   .phone iframe { width: min(390px, calc(100vw - 56px)); }
+  .toast[open] { top: auto; right: 16px; bottom: 16px; left: 16px; width: auto; }
   h1 { font-size: 1.4rem; }
 }
+
+/* Team alerts: a mock-up of a team chat in this app's own style, with no real app's logo or look. */
+.chat { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; margin-bottom: 6px; }
+.chat-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.chat-messages { list-style: none; margin: 0; padding: 12px 16px 16px; display: grid; gap: 14px; }
+.chat-msg { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: start; }
+.chat-avatar { width: 36px; height: 36px; border-radius: 8px; }
+.chat-bubble { min-width: 0; }
+.chat-bubble p { margin: 0 0 4px; overflow-wrap: anywhere; }
+.chat-meta time { margin-left: 6px; color: var(--muted); font-size: 0.85rem; }
+.chat-tag { padding: 1px 5px; border-radius: 4px; background: var(--muted-soft); color: var(--text-2); font-size: 0.7rem; font-weight: 700; }
+.chat-title { font-weight: 700; }
+.chat-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.chat-actions a { padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 6px; font-size: 0.88rem; font-weight: 600; text-decoration: none; }
+.chat-empty { padding: 8px 0; color: var(--muted); }
+.chat-teams .chat-messages, .chat-whatsapp .chat-messages { background: var(--bg); }
+.chat-teams .chat-bubble { padding: 10px 12px; border: 1px solid var(--line); border-top: 4px solid var(--warn-strong); border-radius: 6px; background: var(--card); }
+.chat-whatsapp .chat-bubble { max-width: 34rem; padding: 8px 12px; border-radius: 0 10px 10px 10px; background: var(--good-soft); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08); }
+.chat-whatsapp .chat-actions a { padding: 0; border: 0; text-decoration: underline; }
+.payload { margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); font-size: 0.82rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* Production architecture drawing, in the app's own colours so it follows light and dark. On a phone it
    scrolls sideways rather than shrinking the words. */

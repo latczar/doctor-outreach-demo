@@ -66,6 +66,7 @@
           {{ d.text }} <span class="muted small">{{ a.at[:16] | replace('T', ' ') }} UTC, to the {{ d.channel }}{% if d.error %}: {{ d.error }}{% endif %}</span></li>
       {% endfor %}
     </ul>
+    <p class="small"><a href="/alerts">See them as the team would, in Slack, Teams or WhatsApp</a></p>
   {% else %}
     <p class="muted">No urgent alerts.</p>
   {% endif %}

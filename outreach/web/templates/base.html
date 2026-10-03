@@ -46,16 +46,30 @@
       <p>The drafting engine runs on a laptop, not on this server. The drafts already here when the site starts are real ones from that engine.</p>
       <button type="button" popovertarget="about-online" popovertargetaction="hide">Close</button>
     </div>
+  {% else %}
+    {% set writer = 'the local model' if model.startswith('ollama') else ('Claude' if model.startswith('anthropic') else 'the template writer') %}
+    <div class="demo-banner laptop">Laptop copy: emails are written by {{ writer }}, {% if demo_inbox %}every email goes to your own inbox{% else %}emails are saved to the outbox folder{% endif %}, and you can upload your own list.<button type="button" class="info" popovertarget="about-laptop" aria-label="How is this different from the live site?">i</button></div>
+    <div class="info-pop" id="about-laptop" popover>
+      <p><strong>The laptop copy and the live site</strong></p>
+      <p>This copy runs on your laptop with everything switched on: {{ writer }} writes the emails, {% if demo_inbox %}each approved email is delivered to your own inbox with a line saying which doctor it was for{% else %}approved emails are saved to the outbox folder{% endif %}, and you can upload your own research list.</p>
+      <p>The live site, doctor-outreach.vercel.app, uses a simple template for new drafts, never sends email, and offers a sample list instead of uploads.</p>
+      <button type="button" popovertarget="about-laptop" popovertargetaction="hide">Close</button>
+    </div>
   {% endif %}
   {% if run.running and active != 'run' %}
     <div class="run-banner"><span class="spinner"></span>The pipeline is running. <a href="/run">Watch its progress</a></div>
   {% endif %}
   <main id="main">
     {% if flash %}
-      <div class="banner {{ flash.kind }}" role="status">
-        <strong>{{ {'ok': 'Done', 'warn': 'Please check', 'bad': 'There is a problem'}.get(flash.kind, 'Note') }}</strong>
-        <span>{{ flash.text }}</span>
-      </div>
+      {# A toast in the corner: open when the page arrives, closed by its own button, with no JavaScript. Successes
+         fade after a few seconds unless the pointer or keyboard is on them. Warnings and problems stay until closed. #}
+      <dialog open class="toast {{ flash.kind }}">
+        <div role="{{ 'alert' if flash.kind == 'bad' else 'status' }}">
+          <strong>{{ {'ok': 'Done', 'warn': 'Please check', 'bad': 'There is a problem'}.get(flash.kind, 'Note') }}</strong>
+          <span>{{ flash.text }}</span>
+        </div>
+        <form method="dialog"><button class="toast-close" aria-label="Close this message">&times;</button></form>
+      </dialog>
     {% endif %}
     {% block content %}{% endblock %}
   </main>

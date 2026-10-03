@@ -75,7 +75,7 @@ def test_confirming_a_mailbox_puts_the_doctor_on_the_final_list(page: Page, app_
 def test_no_main_page_scrolls_sideways_on_a_phone(page: Page, app_url: str):
     run_the_pipeline(page, app_url)
     page.set_viewport_size(PHONE)
-    for path in ("/", "/doctors", "/review", "/log", "/replay", "/architecture"):
+    for path in ("/", "/doctors", "/review", "/log", "/alerts", "/replay", "/architecture"):
         page.goto(app_url + path)
         width = page.evaluate("document.documentElement.scrollWidth")
         assert width <= PHONE["width"], f"{path} is {width}px wide on a {PHONE['width']}px phone"
