@@ -167,6 +167,8 @@ def test_overview_shows_the_to_do_list_and_the_workflow_board(client):
     assert ("27 rows → 24 doctors → 19 qualified → 18 with an email → 14 verified → 11 on the final list → "
             "10 drafts passed → 0 approved → 0 sent") in page
     assert "Final list: 11 doctors passed every rule" in page
+    # Steps that haven't started say what they wait for.
+    assert '<p class="bd-after">After approval</p>' in page and '<p class="bd-after">After sending</p>' in page
     assert "Their emails: 10 waiting for you, 1 needs fixing, none sent yet." in page
     # Every page carries the explanation boxes the small "i" buttons open, and our own logo.
     assert 'id="term-catch-all" popover' in page and 'popovertarget="how-email_verified"' in page

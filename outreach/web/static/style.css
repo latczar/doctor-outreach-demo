@@ -209,6 +209,10 @@ label { font-weight: 600; font-size: 0.9rem; }
 .bd-link:focus-visible { outline: none; }
 .bd-link:focus-visible::after { outline: 3px solid var(--focus); outline-offset: 2px; }
 .bd-box .info, .bd-button { position: relative; z-index: 1; }
+/* Nine "i" buttons in a row are noisy, so on the board they stay grey until you point at the step. */
+.bd-box button.info { width: 1.15em; height: 1.15em; border-color: var(--line-strong); background: transparent; color: var(--muted); }
+.bd-box:hover button.info, .bd-box button.info:focus-visible { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.bd-after { margin: 0; color: var(--muted); font-size: 0.78rem; }
 .bd-count { margin: 0; color: var(--muted); font-size: 0.78rem; }
 .bd-count b { margin-right: 2px; color: var(--text); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .bd-bar { display: flex; height: 8px; margin: 4px 0; border-radius: 999px; overflow: hidden; background: var(--muted-soft); }

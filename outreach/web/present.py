@@ -120,6 +120,8 @@ BOARD_WORDS = {
 
 # What follows a box's big number: "19 of 24"; the second form is for when none have arrived.
 BOARD_COUNT = {"send": ("of {of}", "sent"), "log": ("logged", "logged")}
+# What a step that hasn't started is waiting for, so it doesn't just look switched off.
+BOARD_AFTER = {"send": "After approval", "log": "After sending"}
 
 
 def board_words(status: str, n: int) -> str:
@@ -192,6 +194,8 @@ def board(view: dict) -> dict:
             [(tone, board_words(code, n)) for tone, code, n in shown],
         )
         box["move"] = here
+        if box["later"]:
+            box["after"] = BOARD_AFTER.get(step["key"])
         if step.get("first_time") or step.get("retried"):
             box["tries"] = f"So far, {step['first_time']} passed first time and {step['retried']} on a retry."
         boxes.append(box)

@@ -16,6 +16,7 @@
 <li class="bd-box {{ box.tone }}{{ ' move' if box.move }}{{ ' later' if box.later }}">
   {% if box.move %}<span class="bd-move">Your move</span>{% endif %}
   <h3><span class="sr">Step {{ box.number }}, {{ box.status }}: </span><a class="bd-link" href="{{ box.href }}">{{ box.label }}</a><button type="button" class="info" popovertarget="how-{{ box.key }}" aria-label="How this step decides">i</button></h3>
+  {% if box.after %}<p class="bd-after">{{ box.after }}</p>{% endif %}
   {% if not b.empty %}
     <p class="bd-count"><b>{{ box.count }}</b> {{ box.detail }}</p>
     {% if box.parts %}
