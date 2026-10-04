@@ -60,7 +60,7 @@ def test_the_replay_page_plays_back_and_never_runs_anything(settings, conn, serv
 
     run_pipeline(conn, services, SEED / "leads_raw.csv")
     page = client.get("/replay").text
-    assert "Replay: one run of the workflow" in page and "Final list: 11 doctors cleared to contact." in page
+    assert "Replay: one run of the workflow" in page and "Final list: 11 doctors passed every rule." in page
     assert "2 to 4 hours" in page and "Its profile hides an instruction" in page
     assert "&lt;doctor_profile&gt;" in page  # Show prompt holds the real prompt, fenced data and all
     # It only reads: no form on the page can run the pipeline or send anything.

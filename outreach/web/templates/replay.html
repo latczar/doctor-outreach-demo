@@ -35,7 +35,7 @@
       </li>
       {% endfor %}
     </ol>
-    <p class="rp-result"><strong>Final list: {{ replay.final_list }} doctor{{ 's' if replay.final_list != 1 }} cleared to contact.</strong> The rules took {{ replay.rules_time }} for {{ replay.rows }} rows.</p>
+    <p class="rp-result"><strong>Final list: {{ replay.final_list }} doctor{{ 's' if replay.final_list != 1 }} passed every rule.</strong> The rules took {{ replay.rules_time }} for {{ replay.rows }} rows.</p>
   </section>
 
   {% if replay.cards %}

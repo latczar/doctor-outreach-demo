@@ -162,8 +162,12 @@ def test_overview_shows_the_to_do_list_and_the_workflow_board(client):
     assert "10 first time, 0 on a retry" in page
     # The step that needs a person next is marked, with the same job as the top of the to-do list.
     assert page.count('<span class="bd-move">Your move</span>') == 1
-    assert '<a class="button primary bd-button" href="/review">Review 10</a>' in page
-    assert "Final list: 11 doctors cleared to contact" in page
+    assert '<a class="button primary bd-button" href="/review">Review 10 emails</a>' in page
+    # The whole board in one line, and the final list says where its emails are, so it can't read as "ready to send".
+    assert ("27 rows → 24 doctors → 19 qualified → 18 with an email → 14 verified → 11 on the final list → "
+            "10 drafts passed → 0 approved → 0 sent") in page
+    assert "Final list: 11 doctors passed every rule" in page
+    assert "Their emails: 10 waiting for you, 1 needs fixing, none sent yet." in page
     # Every page carries the explanation boxes the small "i" buttons open, and our own logo.
     assert 'id="term-catch-all" popover' in page and 'popovertarget="how-email_verified"' in page
     assert 'href="/static/logo.svg"' in page
@@ -178,7 +182,7 @@ def test_every_doctor_who_reaches_a_step_is_a_dot_in_its_box(conn, services):
     assert [box["count"] for box in boxes] == [24, 19, 18, 14, 11, 10, 0, 0, 0]
     assert all(sum(n for _, n, _ in box["parts"]) == box["of"] for box in boxes)
     assert boxes[3]["outcomes"] == [("warn", "1 needs you"), ("muted", "3 bad emails")]
-    assert (b["mode"], b["empty"], b["move"]["label"]) == ("dots", False, "Review 10")
+    assert (b["mode"], b["empty"], b["move"]["label"]) == ("dots", False, "Review 10 emails")
     # The Your move box leaves its job to the button, rather than also saying "10 waiting for you".
     assert boxes[6]["move"] and boxes[6]["outcomes"] == []
 
@@ -193,11 +197,11 @@ def _view(**at: dict) -> dict:
 
 def test_your_move_follows_the_to_do_list_order():
     everything = _view(approval={"PENDING_APPROVAL": 3}, draft={"DRAFT_FAILED": 1}, email_verified={"NEEDS_REVIEW": 1})
-    assert your_move(everything)["label"] == "Review 3"
-    assert your_move(_view(draft={"DRAFT_FAILED": 2}, qualify={"NEEDS_REVIEW": 1}))["label"] == "Fix 2"
+    assert your_move(everything)["label"] == "Review 3 emails"
+    assert your_move(_view(draft={"DRAFT_FAILED": 2}, qualify={"NEEDS_REVIEW": 1}))["label"] == "Fix 2 emails"
     decide = your_move(_view(email_verified={"NEEDS_REVIEW": 1}, send={"APPROVED": 2}))
     assert (decide["key"], decide["label"], decide["href"]) == (
-        "email_verified", "Decide 1", "/doctors?show=needs&step=email_verified")
+        "email_verified", "Decide on 1 doctor", "/doctors?show=needs&step=email_verified")
     assert your_move(_view(send={"APPROVED": 2, "SEND_FAILED": 1}))["send"] == 3
     assert your_move(_view()) is None
 

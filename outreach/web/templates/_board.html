@@ -39,7 +39,8 @@
 
 {% macro workflow_board(b) %}
 <section class="card board-card" aria-labelledby="board-title">
-  <h2 id="board-title">The workflow <span class="muted small">{{ 'each box is a step, each dot is a doctor' if b.mode == 'dots' and not b.empty else 'each box is a step, in order' }}</span></h2>
+  <h2 id="board-title">The workflow{% if b.empty %} <span class="muted small">each box is a step, in order</span>{% endif %}</h2>
+  {% if not b.empty %}<p class="bd-story">{{ b.story | join(" → ") }}</p>{% endif %}
   <div class="board">
     <div class="zone">
       <p class="zone-label">Plain rules decide who is contacted</p>
@@ -58,8 +59,8 @@
       Click a step to see who's there, and why.</p>
     <div class="callout">
       <div>
-        <strong>Final list: {{ b.final_list }} doctor{{ 's' if b.final_list != 1 }} cleared to contact</strong>
-        <p class="muted small">Search it, filter it by specialty or country, download it, or copy it into Google Sheets.</p>
+        <strong>Final list: {{ b.final_list }} doctor{{ 's' if b.final_list != 1 }} passed every rule</strong>
+        <p class="muted small">{{ b.emails }}</p>
       </div>
       <a class="button primary" href="/doctors?show=final">Open the final list</a>
     </div>

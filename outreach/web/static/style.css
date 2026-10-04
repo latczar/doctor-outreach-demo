@@ -191,6 +191,7 @@ label { font-weight: 600; font-size: 0.9rem; }
 
 /* Overview: the workflow board. A box a step, in order, on a dotted ground like a map. Each doctor is a dot
    (the same dots as the Doctors page), or a slice of a bar for a long list. How a step decides sits behind its "i". */
+.bd-story { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 .board { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 12px; margin-top: 8px; }
 .zone { padding: 10px 10px 12px; border-radius: 12px; background-color: var(--bg);
   background-image: radial-gradient(circle, var(--line) 1px, transparent 1.4px); background-size: 14px 14px; }

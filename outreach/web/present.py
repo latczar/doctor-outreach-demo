@@ -140,15 +140,18 @@ def your_move(view: dict) -> dict | None:
     fix = steps["draft"]["stopped"].get(Status.DRAFT_FAILED, 0)
     send = steps["send"]["waiting"].get(Status.APPROVED, 0) + steps["send"]["stopped"].get(Status.SEND_FAILED, 0)
     if review:
-        return {"key": "approval", "label": f"Review {review}", "href": "/review", "codes": {Status.PENDING_APPROVAL}}
+        return {"key": "approval", "label": f"Review {review} email{'' if review == 1 else 's'}", "href": "/review",
+                "codes": {Status.PENDING_APPROVAL}}
     if fix:
-        return {"key": "draft", "label": f"Fix {fix}", "href": "/review", "codes": {Status.DRAFT_FAILED}}
+        return {"key": "draft", "label": f"Fix {fix} email{'' if fix == 1 else 's'}", "href": "/review",
+                "codes": {Status.DRAFT_FAILED}}
     for step in view["steps"]:
         if decide := step["stopped"].get(Status.NEEDS_REVIEW, 0):
-            return {"key": step["key"], "label": f"Decide {decide}", "codes": {Status.NEEDS_REVIEW},
-                    "href": f"/doctors?show=needs&step={step['key']}"}
+            return {"key": step["key"], "label": f"Decide on {decide} doctor{'' if decide == 1 else 's'}",
+                    "codes": {Status.NEEDS_REVIEW}, "href": f"/doctors?show=needs&step={step['key']}"}
     if send:  # a failed send stays listed as a reason: it's a problem, not only a job
-        return {"key": "send", "label": f"Send {send}", "send": send, "codes": {Status.APPROVED}}
+        return {"key": "send", "label": f"Send {send} email{'' if send == 1 else 's'}", "send": send,
+                "codes": {Status.APPROVED}}
     return None
 
 
@@ -197,8 +200,23 @@ def board(view: dict) -> dict:
             box["tries"] = f"{step['first_time']} first time, {step['retried']} on a retry"
         boxes.append(box)
     boxes[0]["move"] = None
+
+    # The whole board in one line, and where the final list's emails are, for the box under it.
+    steps = {s["key"]: s for s in view["steps"]}
+    count = {key: s["count"] for key, s in steps.items()}
+    story = [f"{rows} row{'' if rows == 1 else 's'}", f"{unique} doctor{'' if unique == 1 else 's'}",
+             f"{count['qualify']} qualified", f"{count['email_available']} with an email",
+             f"{count['email_verified']} verified", f"{view['final_list']} on the final list",
+             f"{count['draft']} draft{'' if count['draft'] == 1 else 's'} passed",
+             f"{count['approval']} approved", f"{count['send']} sent"]
+    where = [(Status.READY_TO_DRAFT, steps["draft"]["waiting"]), (Status.PENDING_APPROVAL, steps["approval"]["waiting"]),
+             (Status.DRAFT_FAILED, steps["draft"]["stopped"]), (Status.APPROVED, steps["send"]["waiting"]),
+             (Status.SEND_FAILED, steps["send"]["stopped"])]
+    emails = [board_words(code, group[code]) for code, group in where if group.get(code)]
+    emails.append(board_words(Status.SENT, count["send"]) if count["send"] else "none sent yet")
     return {"rules": boxes[:5], "people": boxes[5:], "empty": not rows, "move": move,
-            "mode": "dots" if rows <= DOTS_UP_TO else "bars", "final_list": view["final_list"]}
+            "mode": "dots" if rows <= DOTS_UP_TO else "bars", "final_list": view["final_list"],
+            "story": story, "emails": "Their emails: " + ", ".join(emails) + "."}
 
 
 FINAL_LIST_LEAD_IN = {
