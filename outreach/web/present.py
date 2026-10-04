@@ -92,8 +92,113 @@ def step_status(step: dict) -> tuple[str, str]:
     if Status.APPROVED in waiting:
         return "Ready to send", "waiting"
     if step["of"] == 0 and step["count"] == 0:
-        return "Cannot start yet", "muted"
+        return "Not yet", "muted"
     return "Done", "good"
+
+
+# --- the Overview's board: the workflow left to right, a box a step ----------------
+
+DOTS_UP_TO = 40  # one dot per doctor up to this many rows; a longer list shows bars, as dots stop being countable
+
+# The board's boxes are small, so they use the short status words: "3 bad emails", "1 opted out".
+BOARD_WORDS = {
+    Status.NEW: ("not checked yet", "not checked yet"),
+    Status.DUPLICATE: ("duplicate merged", "duplicates merged"),
+    Status.DISQUALIFIED: ("doesn't fit", "don't fit"),
+    Status.NEEDS_REVIEW: ("needs you", "need you"),
+    Status.NO_EMAIL: ("has no email", "have no email"),
+    Status.EMAIL_INVALID: ("bad email", "bad emails"),
+    Status.ALREADY_CONTACTED: ("contacted recently", "contacted recently"),
+    Status.SUPPRESSED: ("opted out", "opted out"),
+    Status.READY_TO_DRAFT: ("waiting for a draft", "waiting for a draft"),
+    Status.DRAFT_FAILED: ("needs fixing", "need fixing"),
+    Status.PENDING_APPROVAL: ("waiting for you", "waiting for you"),
+    Status.REJECTED: ("rejected", "rejected"),
+    Status.APPROVED: ("ready to send", "ready to send"),
+    Status.SEND_BLOCKED: ("blocked at send", "blocked at send"),
+    Status.SEND_FAILED: ("failed to send", "failed to send"),
+    Status.SENT: ("sent", "sent"),
+}
+
+# What follows a box's big number: "19 of 24", "9 of 11 passed"; the second form is for when none have arrived.
+BOARD_COUNT = {"draft": ("of {of} passed", "passed"), "approval": ("of {of} approved", "approved"),
+               "send": ("of {of} sent", "sent"), "log": ("logged", "logged")}
+
+
+def board_words(status: str, n: int) -> str:
+    singular, plural = BOARD_WORDS[Status(status)]
+    return f"{n} {singular if n == 1 else plural}"
+
+
+def your_move(view: dict) -> dict | None:
+    """The step where a person is needed next, in the same order as the Overview's to-do list.
+
+    `codes` are the statuses its button deals with, so the box doesn't repeat them as reasons.
+    """
+    steps = {s["key"]: s for s in view["steps"]}
+    review = steps["approval"]["waiting"].get(Status.PENDING_APPROVAL, 0)
+    fix = steps["draft"]["stopped"].get(Status.DRAFT_FAILED, 0)
+    send = steps["send"]["waiting"].get(Status.APPROVED, 0) + steps["send"]["stopped"].get(Status.SEND_FAILED, 0)
+    if review:
+        return {"key": "approval", "label": f"Review {review}", "href": "/review", "codes": {Status.PENDING_APPROVAL}}
+    if fix:
+        return {"key": "draft", "label": f"Fix {fix}", "href": "/review", "codes": {Status.DRAFT_FAILED}}
+    for step in view["steps"]:
+        if decide := step["stopped"].get(Status.NEEDS_REVIEW, 0):
+            return {"key": step["key"], "label": f"Decide {decide}", "codes": {Status.NEEDS_REVIEW},
+                    "href": f"/doctors?show=needs&step={step['key']}"}
+    if send:  # a failed send stays listed as a reason: it's a problem, not only a job
+        return {"key": "send", "label": f"Send {send}", "send": send, "codes": {Status.APPROVED}}
+    return None
+
+
+def _box(number: int, key: str, href: str, label: str, how: str, count: int, of: int, detail: str,
+         status: tuple[str, str], parts: list[tuple[str, int]], outcomes: list[tuple[str, str]]) -> dict:
+    return {
+        "number": number, "key": key, "href": href, "label": label, "how": how, "count": count, "of": of,
+        "detail": detail, "status": status[0], "tone": status[1], "later": status[0] == "Not yet",
+        # (state, how many, share of the doctors who reached this step): a dot each, or a slice of the bar
+        "parts": [(state, n, round(100 * n / of, 1) if of else 0) for state, n in parts if n],
+        "outcomes": outcomes,
+    }
+
+
+def board(view: dict) -> dict:
+    """The Overview's board, from funnel(): who got through each step, who is waiting or stopped there, and why.
+
+    The research list is the first box. Each doctor is a dot while the list is short enough to count,
+    and the step where a person is needed next is marked, in the to-do list's order.
+    """
+    rows, unique, merged = view["rows"], view["unique"], view["duplicates"]
+    move = your_move(view) if rows else None
+    boxes = [_box(
+        1, "intake", f"/doctors?step={INTAKE['key']}", INTAKE["label"], INTAKE["how"], unique, rows,
+        f"doctor{'' if unique == 1 else 's'}, from {rows} row{'' if rows == 1 else 's'}",
+        ("Done", "good") if rows else ("Not yet", "muted"),
+        [("done", unique), ("stopped", merged)],
+        [("muted", board_words(Status.DUPLICATE, merged))] if merged else [],
+    )]
+    for number, step in enumerate(view["steps"], start=2):
+        person = {code: n for code, n in step["stopped"].items() if code in NEEDS_PERSON}
+        stopped = {code: n for code, n in step["stopped"].items() if code not in NEEDS_PERSON}
+        here = move if move and move["key"] == step["key"] else None
+        shown = [(tone, code, n) for tone, group in (("waiting", step["waiting"]), ("warn", person), ("muted", stopped))
+                 for code, n in group.items() if not (here and code in here["codes"])]
+        with_of, without = BOARD_COUNT.get(step["key"], ("of {of}", ""))
+        box = _box(
+            number, step["key"], f"/doctors?step={step['key']}", step["label"], step["how"], step["count"],
+            step["of"], (with_of if step["of"] else without).format(of=step["of"]), step_status(step),
+            [("done", step["count"]), ("waiting", sum(step["waiting"].values())),
+             ("person", sum(person.values())), ("stopped", sum(stopped.values()))],
+            [(tone, board_words(code, n)) for tone, code, n in shown],
+        )
+        box["move"] = here
+        if step.get("first_time") or step.get("retried"):
+            box["tries"] = f"{step['first_time']} first time, {step['retried']} on a retry"
+        boxes.append(box)
+    boxes[0]["move"] = None
+    return {"rules": boxes[:5], "people": boxes[5:], "empty": not rows, "move": move,
+            "mode": "dots" if rows <= DOTS_UP_TO else "bars", "final_list": view["final_list"]}
 
 
 FINAL_LIST_LEAD_IN = {

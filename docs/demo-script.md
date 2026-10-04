@@ -3,7 +3,7 @@
 ## Before the interview (10 minutes)
 
 1. Start Ollama (it usually runs in the background already) and open a terminal in the project folder.
-2. Run `.venv\Scripts\python -m pytest -q`. It should say `161 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
+2. Run `.venv\Scripts\python -m pytest -q`. It should say `165 passed, 4 deselected` (the 4 are the browser tests, which run on their own with `-m e2e`).
 3. Run `.venv\Scripts\python -m outreach serve` and open http://localhost:8000.
 4. Make sure the page is in light mode (switch at the top right), then click **Reset demo**, so the overview shows "Start here".
 5. Have [docs/plan.md](plan.md) open in another tab in case they want the design.
@@ -14,9 +14,9 @@ Backup plan: if Ollama misbehaves on the day, set `LLM_PROVIDER=fake` in `.env`,
 
 ## The walkthrough (about 5 minutes)
 
-1. **Start here.** Read the four lines on the overview: rules check the list, the system writes, you approve, each email goes once and is logged. "Your team does this by hand today."
+1. **Start here.** Read the four lines on the overview: rules check the list, the system writes, you approve, each email goes once and is logged. "Your team does this by hand today." Under them, the board is empty: "This is your flow chart. Nothing has run yet."
 2. **Click Run the pipeline.** The Run page reports each step as it finishes: "Qualified doctor: 19 of 24 doctors fit the campaign." While the system writes the drafts (about 1 to 2 minutes locally), point at the urgent alert line: a scraped profile tried to give the system instructions, so the team was told. When it finishes, click **Watch the replay**, press F for full screen and Space to play: "Here's that run again, from the audit log. The rules sort 27 rows in under a second, then each draft is written and checked." The by-hand bar is your estimate (5 to 10 minutes a doctor), so say so.
-3. **Click See the overview.** "This is what needs me today": the to-do list. Then the steps: "27 rows became 24 doctors", "19 of 24 fit the campaign". Tap the "i" after a step's name to show how it decides. Click **See who, and why** under Email verified? for the 4 doctors stopped there. Tap the small "i" after "catch-all".
+3. **Click See the overview.** "This is what needs me today": the to-do list. Then the board, now filled in: "This is your flow chart, live. Each box is one of your steps, each dot is a doctor, and Your move shows where a person is needed." Explain the dots once, in the replay, not again here. Tap a step's "i" to show how it decides. Click the **Email verified?** box for the 4 doctors stopped there. Tap the small "i" after "catch-all".
 4. **Click Open the final list.** Search "price": Daniel Price's email was guessed from his trust's pattern, then verified. Filter to Cardiology and click **Copy for Google Sheets**: "Paste into cell A1 and the columns line up."
 5. **Open the Not on the list tab and click Rachel Moore.** Her tracker stops at Not previously contacted?: "A new email, but caught on her registration number."
 6. **Open Review emails** and type your name once. "Blue is the personalised draft the system wrote, grey is the standard footer, yellow is the personal detail. The highlight comes from the same function as the personalised check." Open **Edit before approving**, add `[DATE]`, click Approve: refused, edit kept. Approve two or three; reject one with a reason.
@@ -66,7 +66,7 @@ If they ask how the made-up hospitals pass the email checks: "A stand-in answers
 
 ## How I tested it (a good story to tell)
 
-- 161 automated tests run in about 15 seconds with a fake model, so they never call an AI.
+- 165 automated tests run in about 15 seconds with a fake model, so they never call an AI.
 - 4 browser tests (Playwright, in `tests/e2e`) click through the real pages in Chromium: the whole workflow from research list to outreach log, an edit that's refused, a Decide re-check, and every main page at phone width. Each starts its own copy of the app with a fresh database, so the demo data is never touched. `pytest -m e2e` runs them in about 15 seconds.
 - Then I ran it against the real local model and measured how many drafts passed. The first run passed 7 of 11, and the failures showed three real problems:
   1. My prompt said "start the body with Dear...", and the model returned only the greeting. I reworded the layout.
@@ -148,6 +148,9 @@ An approved email that failed to send, and a scraped profile that tries to give 
 
 **Why GOV.UK patterns?**
 They were built and tested with real users to make multi-step services clear to anyone. I borrowed the patterns, not the look: services outside GOV.UK mustn't use its crown, typeface or colours, and an official-looking tool would be a bad idea here.
+
+**Why does the overview look a bit like a game?**
+I borrowed one idea from strategy-game dashboards: show the whole state at a glance, and light up the next move. Nothing else. There are no points and no timers, because rushing a person's approval would undercut the reason for having one. The dots are one per doctor because 27 fit on a screen; with a long list, each box shows a bar instead.
 
 **Is it accessible?**
 I checked every page against Vercel's Web Interface Guidelines, about 80 rules on accessibility, focus, forms and motion, and fixed what they found: form fields tell the browser what they hold, the spinner stops for people who ask their computer for less motion, and Send asks before anything goes out. It already had a skip link, a visible focus outline, a label on every field and zoom allowed. A full WCAG audit with a screen reader would be the next step.

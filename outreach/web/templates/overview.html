@@ -2,42 +2,7 @@
 {% set active = "overview" %}
 {% block title %}Overview{% endblock %}
 {% from "_confirm.html" import confirm_button %}
-
-{% macro how_box(key, label, how) %}
-<div class="info-pop" id="how-{{ key }}" popover>
-  <p><strong>{{ label }}</strong></p>
-  <p>{{ how | explain }}</p>
-  <button type="button" popovertarget="how-{{ key }}" popovertargetaction="hide">Close</button>
-</div>
-{% endmacro %}
-
-{% macro how_button(key) %}<button type="button" class="info" popovertarget="how-{{ key }}" aria-label="How this step decides">i</button>{% endmacro %}
-
-{# Two lines a step: its name and status, then what happened. How it decides opens from the "i". #}
-{% macro step_row(step, number) %}
-{% set status, status_tone = step_status(step) %}
-<li class="task">
-  <span class="task-num" aria-hidden="true">{{ number }}</span>
-  <div class="task-body">
-    <div class="task-head">
-      <h3>{{ step.label }}{{ how_button(step.key) }}</h3>
-      <span class="tag {{ status_tone }}">{{ status }}</span>
-    </div>
-    <div class="task-result">
-      <p class="task-summary">{{ step.summary }}</p>
-      {% if step.of %}<span class="meter" aria-hidden="true"><span style="width: {{ (100 * step.count / step.of) | round | int }}%"></span></span>{% else %}<span></span>{% endif %}
-      {% if step.waiting or step.stopped %}
-        <p class="task-outcomes">
-          {% for code, n in step.waiting.items() %}<span class="tag waiting">{{ phrase(code, n) }}</span>{% endfor %}
-          {% for code, n in step.stopped.items() %}<span class="tag {{ 'warn' if code in needs_person else 'muted' }}">{{ phrase(code, n) }}</span>{% endfor %}
-          <a href="/doctors?step={{ step.key }}">See who, and why</a>
-        </p>
-      {% endif %}
-    </div>
-    {{ how_box(step.key, step.label, step.how) }}
-  </div>
-</li>
-{% endmacro %}
+{% from "_board.html" import workflow_board %}
 
 {% block content %}
 <div class="pagehead">
@@ -71,6 +36,7 @@
     </ol>
     <p>Click <strong>Run the pipeline</strong> to process the made-up research list of 27 doctors.</p>
   </section>
+  {{ workflow_board(board) }}
 {% else %}
   {% set to_review = counts.get('PENDING_APPROVAL', 0) %}
   {% set to_fix = counts.get('DRAFT_FAILED', 0) %}
@@ -120,38 +86,7 @@
     </section>
   {% endif %}
 
-  <section class="card">
-    <h2>How the final list was built <span class="muted small">five rule steps, in order</span></h2>
-    <ol class="tasks">
-      <li class="task">
-        <span class="task-num" aria-hidden="true">1</span>
-        <div class="task-body">
-          <div class="task-head"><h3>{{ intake.label }}{{ how_button("intake") }}</h3><span class="tag good">Done</span></div>
-          <div class="task-result">
-            <p class="task-summary">{{ view.rows }} rows became {{ view.unique }} doctors</p>
-            <span></span>
-            {% if view.duplicates %}<p class="task-outcomes"><span class="tag muted">{{ phrase('DUPLICATE', view.duplicates) }}</span> <a href="/doctors?step=dedupe">See who, and why</a></p>{% endif %}
-          </div>
-          {{ how_box("intake", intake.label, intake.how) }}
-        </div>
-      </li>
-      {% for step in view.steps[:4] %}{{ step_row(step, loop.index + 1) }}{% endfor %}
-    </ol>
-    <div class="callout">
-      <div>
-        <strong>Final list: {{ view.final_list }} doctor{{ 's' if view.final_list != 1 }} cleared to contact</strong>
-        <p class="muted small">Search it, filter it by specialty or country, download it, or copy it into Google Sheets.</p>
-      </div>
-      <a class="button primary" href="/doctors?show=final">Open the final list</a>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Writing and sending <span class="muted small">a person approves every email before it's sent</span></h2>
-    <ol class="tasks">
-      {% for step in view.steps[4:] %}{{ step_row(step, loop.index + 5) }}{% endfor %}
-    </ol>
-  </section>
+  {{ workflow_board(board) }}
 {% endif %}
 
 <details class="card upload-list">

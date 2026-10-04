@@ -189,18 +189,58 @@ label { font-weight: 600; font-size: 0.9rem; }
 .alerts li { padding: 6px 0; border-top: 1px solid var(--line); }
 .alerts li:first-child { border-top: 0; }
 
-/* Overview: steps as a task list */
-.tasks { list-style: none; margin: 0; padding: 0; }
-.task { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); }
-.task-num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 0.9rem; font-weight: 700; display: grid; place-items: center; }
-.task-head { display: flex; justify-content: space-between; gap: 4px 12px; align-items: center; flex-wrap: wrap; }
-/* Two lines a step: its name and status, then what happened. The bars line up, so the steps read like a funnel.
-   How the step decides sits behind its "i". */
-.task-result { display: grid; grid-template-columns: minmax(0, 22rem) 8rem minmax(0, 1fr); gap: 4px 16px; align-items: center; margin-top: 2px; }
-.task-summary { margin: 0; }
-.meter { height: 6px; background: var(--muted-soft); border-radius: 999px; overflow: hidden; }
-.meter span { display: block; height: 100%; background: var(--accent); }
-.task-outcomes { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin: 0; font-size: 0.9rem; }
+/* Overview: the workflow board. A box a step, in order, on a dotted ground like a map. Each doctor is a dot
+   (the same dots as the Doctors page), or a slice of a bar for a long list. How a step decides sits behind its "i". */
+.board { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 12px; margin-top: 8px; }
+.zone { padding: 10px 10px 12px; border-radius: 12px; background-color: var(--bg);
+  background-image: radial-gradient(circle, var(--line) 1px, transparent 1.4px); background-size: 14px 14px; }
+.zone-label { margin: 0 2px 10px; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.zone ol { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.bd-box { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 8px 9px 10px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 1px 2px rgba(20, 34, 60, 0.06), 0 6px 14px rgba(20, 34, 60, 0.06); }
+.bd-box + .bd-box::before { content: ""; position: absolute; left: -13px; top: 34px; width: 12px; height: 2px; background: var(--line-strong); }
+.bd-box:hover { border-color: var(--line-strong); }
+.bd-tag { margin: 0; }
+.bd-tag .tag { font-size: 0.7rem; }
+.bd-tag .tag.good { background: none; padding-left: 0; } /* Done is quieter, so the steps that need a person stand out */
+.bd-box h3 { margin: 0; font-size: 0.86rem; line-height: 1.25; min-height: 3.75em; }
+.bd-num { display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; margin-right: 5px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-size: 0.72rem; vertical-align: 1px; }
+.bd-link { color: inherit; text-decoration: none; }
+.bd-link::after { content: ""; position: absolute; inset: 0; border-radius: 10px; } /* the whole box opens the step */
+.bd-link:focus-visible { outline: none; }
+.bd-link:focus-visible::after { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bd-box .info, .bd-button { position: relative; z-index: 1; }
+.bd-count { margin: 0; color: var(--muted); font-size: 0.78rem; }
+.bd-count b { margin-right: 2px; color: var(--text); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.bd-tries { margin: -3px 0 0; color: var(--muted); font-size: 0.74rem; }
+.bd-dots { display: flex; flex-wrap: wrap; gap: 3px; margin: 2px 0; }
+.bd-dots i, .bd-key i { box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--line-strong); }
+.bd-key i { display: inline-block; margin: 0 1px 0 4px; }
+.bd-dots i.done, .bd-key i.done { background: var(--good); border-color: var(--good); }
+.bd-dots i.waiting, .bd-key i.waiting { border-color: var(--waiting); border-width: 3px; }
+.bd-dots i.person, .bd-key i.person { background: var(--warn-strong); border-color: var(--warn-strong); }
+.bd-dots i.stopped, .bd-key i.stopped { background: var(--text-2); border-color: var(--text-2); border-radius: 2px; }
+.bd-bar { display: flex; height: 8px; margin: 4px 0; border-radius: 999px; overflow: hidden; background: var(--muted-soft); }
+.bd-bar i.done { background: var(--good); }
+.bd-bar i.waiting { background: var(--waiting); }
+.bd-bar i.person { background: var(--warn-strong); }
+.bd-bar i.stopped { background: var(--text-2); }
+.bd-out { display: flex; flex-wrap: wrap; gap: 4px; margin: auto 0 0; }
+.bd-out .tag { font-size: 0.7rem; white-space: normal; }
+.bd-button { margin-top: 6px; padding: 5px 8px; font-size: 0.82rem; text-align: center; }
+/* Your move: the step where a person is needed next. It pulses three times when the page opens, then keeps still. */
+.bd-box.move { border: 2px solid var(--waiting); box-shadow: 0 0 0 4px var(--waiting-soft); animation: your-move 1.4s ease-in-out 3; }
+@keyframes your-move { 50% { box-shadow: 0 0 0 9px var(--waiting-soft); } }
+@media (prefers-reduced-motion: reduce) { .bd-box.move { animation: none; } }
+.bd-move { position: absolute; z-index: 1; top: -10px; left: 50%; transform: translateX(-50%); padding: 2px 9px; border-radius: 999px;
+  background: var(--waiting); color: var(--card); font-size: 0.7rem; font-weight: 700; white-space: nowrap; }
+.bd-box.later { background: transparent; border-style: dashed; border-color: var(--line-strong); box-shadow: none; }
+.bd-box.later h3 { color: var(--muted); }
+.bd-key { margin: 10px 0 0; }
+.bd-key.bars i { border-radius: 2px; }
+.bd-key.bars i.waiting { background: var(--waiting); }
+.board-card .callout { margin-top: 10px; }
 .callout { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; padding: 10px 14px; background: var(--good-soft); border-left: 6px solid var(--good); border-radius: 0 6px 6px 0; }
 .callout p { margin: 2px 0 0; }
 
@@ -388,6 +428,7 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
   .queue { position: static; max-height: none; overflow: visible; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .pair { grid-template-columns: minmax(0, 1fr); }
+  .board { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
   .top-inner { padding: 10px 16px; }
@@ -400,9 +441,9 @@ th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; colo
   .lead { font-size: 1rem; }
   .actions > form, .actions > .button { width: 100%; }
   .actions button, .actions .button { width: 100%; text-align: center; }
-  .task { gap: 10px; }
-  .task-result { grid-template-columns: minmax(0, 1fr); }
-  .task-result > span:empty { display: none; }
+  .zone ol { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bd-box + .bd-box::before { display: none; }
+  .bd-box h3 { min-height: 0; }
   h2 .small { display: block; margin: 2px 0 0; }
   .status-key { grid-template-columns: minmax(0, 1fr); }
   .callout .button { width: 100%; text-align: center; }

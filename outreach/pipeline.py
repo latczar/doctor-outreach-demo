@@ -174,6 +174,24 @@ def step_threshold(index: int) -> int:
     return min(index + 1, 7)
 
 
+def first_try_counts(conn: sqlite3.Connection, campaign_id: str, need: int) -> tuple[int, int]:
+    """Of the emails that passed the checks, how many passed on the first draft and how many on a retry.
+
+    Each doctor counts from their first draft that didn't fail the checks, so a reviewer asking for another
+    version later doesn't turn a first-time pass into a retry.
+    """
+    rows = conn.execute(
+        """SELECT l.status, l.stage, MIN(d.attempt) AS first_ok
+             FROM leads l JOIN drafts d ON d.lead_id = l.id
+            WHERE l.campaign_id = ? AND d.status != 'FAILED_CHECKS'
+            GROUP BY l.id""",
+        (campaign_id,),
+    ).fetchall()
+    tries = [r["first_ok"] for r in rows if gates_passed(r["status"], r["stage"]) >= need]
+    first = sum(1 for n in tries if n == 1)
+    return first, len(tries) - first
+
+
 def funnel(conn: sqlite3.Connection, campaign_id: str) -> dict:
     """How many doctors got through each workflow step ("19 of 24"), and who is waiting or stopped at each.
 
@@ -196,6 +214,8 @@ def funnel(conn: sqlite3.Connection, campaign_id: str) -> dict:
             "waiting": dict(Counter(r["status"] for r in here if r["status"] in WAITING)),
             "stopped": dict(Counter(r["status"] for r in here if r["status"] not in WAITING)),
         })
+        if step["key"] == "draft":
+            steps[-1]["first_time"], steps[-1]["retried"] = first_try_counts(conn, campaign_id, need)
         previous = count
     return {
         "rows": len(rows),

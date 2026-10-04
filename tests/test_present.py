@@ -13,13 +13,15 @@ from outreach.db import get_lead
 from outreach.drafting import draft_context
 from outreach.guardrails import personal_overlap
 from outreach.llm.fake import TemplateLLM
-from outreach.models import Status
+from outreach.ingest import FIELDS
+from outreach.models import WAITING, Status
 from outreach.notify import FileNotifier
 from outreach.pipeline import funnel, run_pipeline
 from outreach.review import approve
 from outreach.sending import OutboxSender, send_approved
 from outreach.web.app import create_app
 from outreach.web.present import (
+    board,
     bucket_of,
     describe_event,
     explain_terms,
@@ -31,6 +33,7 @@ from outreach.web.present import (
     timeline,
     tracker,
     where_now,
+    your_move,
 )
 
 from .conftest import GOOD_BODY, SEED, TODAY, make_lead
@@ -93,7 +96,7 @@ def test_step_status_works_like_a_task_list():
     base = {"count": 5, "of": 9, "waiting": {}, "stopped": {}}
     assert step_status({**base, "waiting": {"PENDING_APPROVAL": 4}}) == ("Waiting for you", "waiting")
     assert step_status({**base, "stopped": {"NEEDS_REVIEW": 2}}) == ("Needs you", "warn")
-    assert step_status({**base, "count": 0, "of": 0}) == ("Cannot start yet", "muted")
+    assert step_status({**base, "count": 0, "of": 0}) == ("Not yet", "muted")
     assert step_status(base) == ("Done", "good")
 
 
@@ -149,16 +152,74 @@ def client(settings, conn, services):
     return TestClient(create_app(replace(settings), llm=TemplateLLM()))
 
 
-def test_overview_reads_as_x_of_y_with_a_to_do_list(client):
+def test_overview_shows_the_to_do_list_and_the_workflow_board(client):
     page = client.get("/").text
-    assert "19 of 24 doctors fit the campaign" in page
-    assert "Final list: 11 doctors cleared to contact" in page
     assert "Review 10 emails" in page and "What needs you" in page
+    # The board: the research list and the eight steps, one box each, with a dot for every doctor.
+    assert page.count('<li class="bd-box') == 9
+    assert "<b>24</b> doctors, from 27 rows" in page and "<b>19</b> of 24" in page and "<b>10</b> of 11 passed" in page
+    assert page.count('<i class="done"></i>') > 24 and 'class="bd-bar"' not in page
+    assert "10 first time, 0 on a retry" in page
+    # The step that needs a person next is marked, with the same job as the top of the to-do list.
+    assert page.count('<span class="bd-move">Your move</span>') == 1
+    assert '<a class="button primary bd-button" href="/review">Review 10</a>' in page
+    assert "Final list: 11 doctors cleared to contact" in page
     # Every page carries the explanation boxes the small "i" buttons open, and our own logo.
     assert 'id="term-catch-all" popover' in page and 'popovertarget="how-email_verified"' in page
     assert 'href="/static/logo.svg"' in page
     # The stylesheet link carries the file's change time, so browsers pick up a new layout straight away.
     assert 'href="/static/style.css?v=' in page
+
+
+def test_every_doctor_who_reaches_a_step_is_a_dot_in_its_box(conn, services):
+    run_pipeline(conn, services, SEED / "leads_raw.csv")
+    b = board(funnel(conn, services.campaign.id))
+    boxes = b["rules"] + b["people"]
+    assert [box["count"] for box in boxes] == [24, 19, 18, 14, 11, 10, 0, 0, 0]
+    assert all(sum(n for _, n, _ in box["parts"]) == box["of"] for box in boxes)
+    assert boxes[3]["outcomes"] == [("warn", "1 needs you"), ("muted", "3 bad emails")]
+    assert (b["mode"], b["empty"], b["move"]["label"]) == ("dots", False, "Review 10")
+    # The Your move box leaves its job to the button, rather than also saying "10 waiting for you".
+    assert boxes[6]["move"] and boxes[6]["outcomes"] == []
+
+
+def _view(**at: dict) -> dict:
+    """funnel()'s steps with nobody anywhere, except the statuses given, for example qualify={"NEEDS_REVIEW": 2}."""
+    keys = ("qualify", "email_available", "email_verified", "not_contacted", "draft", "approval", "send", "log")
+    return {"steps": [{"key": key,
+                       "waiting": {c: n for c, n in at.get(key, {}).items() if c in WAITING},
+                       "stopped": {c: n for c, n in at.get(key, {}).items() if c not in WAITING}} for key in keys]}
+
+
+def test_your_move_follows_the_to_do_list_order():
+    everything = _view(approval={"PENDING_APPROVAL": 3}, draft={"DRAFT_FAILED": 1}, email_verified={"NEEDS_REVIEW": 1})
+    assert your_move(everything)["label"] == "Review 3"
+    assert your_move(_view(draft={"DRAFT_FAILED": 2}, qualify={"NEEDS_REVIEW": 1}))["label"] == "Fix 2"
+    decide = your_move(_view(email_verified={"NEEDS_REVIEW": 1}, send={"APPROVED": 2}))
+    assert (decide["key"], decide["label"], decide["href"]) == (
+        "email_verified", "Decide 1", "/doctors?show=needs&step=email_verified")
+    assert your_move(_view(send={"APPROVED": 2, "SEND_FAILED": 1}))["send"] == 3
+    assert your_move(_view()) is None
+
+
+def test_a_long_list_shows_bars_instead_of_dots(settings, conn, services, tmp_path):
+    names = [(first, last) for first in ("Alex", "Bea", "Cal", "Dee", "Eli", "Fay", "Gus", "Hal", "Ivy")
+             for last in ("Archer", "Baker", "Carter", "Dawson", "Ellis")]  # 45 made-up doctors
+    rows = [f"Dr,{first} {last},Consultant,Cardiology,Northbridge University Hospitals NHS Foundation Trust,"
+            f"United Kingdom,TSTL{i:04d},{first}.{last}@northbridge.nhs.example,Trust consultant directory,"
+            "Leads the trust's echocardiography teaching programme." for i, (first, last) in enumerate(names)]
+    research = tmp_path / "long-list.csv"
+    research.write_text("\n".join([",".join(FIELDS), *rows]) + "\n", encoding="utf-8")
+    run_pipeline(conn, services, research)
+    page = TestClient(create_app(replace(settings), llm=TemplateLLM())).get("/").text
+    assert 'class="bd-bar"' in page and 'class="bd-dots"' not in page
+    assert "<b>45</b> doctors, from 45 rows" in page and "Each bar is the doctors who reached the step" in page
+
+
+def test_before_the_first_run_the_board_shows_every_step_empty(settings, conn):
+    page = TestClient(create_app(replace(settings), llm=TemplateLLM())).get("/").text
+    assert "Start here" in page and page.count('<li class="bd-box later">') == 9
+    assert "Nothing has run yet" in page and "Your move" not in page and 'class="bd-count"' not in page
 
 
 def test_doctor_search_and_filters(client):

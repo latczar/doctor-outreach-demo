@@ -36,6 +36,7 @@ from .present import (
     BUCKETS,
     GLOSSARY,
     NEEDS_PERSON,
+    board,
     bucket_of,
     describe_event,
     event_detail,
@@ -214,7 +215,8 @@ def create_app(settings: Settings | None = None, llm: LLM | None = None) -> Fast
         try:
             alerts = [dict(r) for r in conn.execute(
                 "SELECT * FROM audit_log WHERE event = 'alert.raised' ORDER BY id DESC LIMIT 5")]
-            return render(request, "overview.html", conn, view=funnel(conn, campaign.id), alerts=alerts)
+            view = funnel(conn, campaign.id)
+            return render(request, "overview.html", conn, view=view, board=board(view), alerts=alerts)
         finally:
             conn.close()
 

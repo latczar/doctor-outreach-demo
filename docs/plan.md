@@ -197,7 +197,7 @@ The screens are organised around the team's jobs, not the system's states. Each 
 
 | Screen | The question it answers | What's on it |
 |---|---|---|
-| **Overview** | What needs me, and how was the list built? | The to-do list first. Then each step as a task list: "19 of 24 doctors fit the campaign", a status (Done, Needs you, Waiting for you, Cannot start yet), how the step decides, and who didn't get through. The final list sits after step 5 |
+| **Overview** | What needs me, and where does the work stand? | The to-do list first. Then the workflow board: one box a step, left to right, in two zones (plain rules decide who is contacted; the system writes, a person decides). Each box has its count ("19 of 24"), a dot for each doctor who reached it, the reasons people stopped ("3 bad emails"), a status (Done, Needs you, Waiting for you, Not yet) and how the step decides behind its "i". The step where a person is needed next says Your move, with its button. Click a box to see who's there and why. The final list sits under the board |
 | **Doctors** | Who is on the list, and why? | Search, filters (specialty, country), three tabs (On the final list, Needs you, Not on the list), a tracker and one plain sentence per doctor. Download CSV or Copy for Google Sheets exports exactly what's on screen |
 | **Review emails** | Is this email right? | One email at a time, with the lists beside it 10 names a page, opening on the page that holds the email on screen. Only that email gets its checks and highlights worked out, so the page stays quick with hundreds waiting. Blue = Personalised draft, grey = Standard footer (the same on every email), yellow = the personal detail, red = text that tries to give the system orders. The screens say "the system" rather than AI |
 | **Doctor page** | What happened to this doctor? | Tracker, step-by-step journey with reasons, every draft, history in plain words. For a doctor who needs you: a decision card (fix and re-check, or take off the list) |
@@ -210,13 +210,17 @@ The screens are organised around the team's jobs, not the system's states. Each 
 
 **The tracker** is like a parcel tracker: green dot = passed, blue ring = waiting, amber dot = needs you, dark square = stopped here, empty dot = not reached.
 
+**The board** uses the same dots, one per doctor, so you can watch the list thin out from left to right. It borrows one idea from strategy-game dashboards: show the whole state at a glance, and light up the next move. Your move goes on the same job as the top of the to-do list (review, then fix, then decide, then send), so the two never disagree, and it pulses three times when the page opens, then keeps still. Above 40 doctors the dots stop being countable, so every box shows a bar instead. Before the first run the board is there but empty, and it fills in after the run. The Personalised email box also says how many drafts passed first time and how many on a retry.
+- **Interview line:** "This is your flow chart, live. Each box is one of your steps, each dot is a doctor, and it shows where a person is needed."
+- **If they ask about scale:** "The dots are there because 27 doctors fit on a screen. With 5,000, each box shows a bar."
+
 **Three lists instead of sixteen statuses:** every doctor is in exactly one. On the final list (cleared to contact), Needs you (the rules couldn't decide), Not on the list (stopped by a rule or a person).
 
 **Deciding on a doctor who needs you:** the person never skips the rules. They supply the missing fact (a name, a grade from the list, a better email) or confirm a catch-all mailbox, and the rules run again from the top; if the doctor passes, the system writes their email straight away. Or they take the doctor off the list. Both need a note and a name, and both go in the history (`override.py`).
 
-**On a phone:** every field has its explanation in a hint above it, not as placeholder text inside it (the GOV.UK advice), so nothing is cut off or disappears when you type. The menu becomes a 2x2 grid, buttons go full width, and each step's result stacks under its name.
+**On a phone:** every field has its explanation in a hint above it, not as placeholder text inside it (the GOV.UK advice), so nothing is cut off or disappears when you type. The menu becomes a 2x2 grid, buttons go full width, and the board shows two boxes a row.
 
-**Compact on a laptop:** most laptops run Windows at 150 to 175% scaling, so the browser lays the page out on a small canvas (on Lat's laptop, about 1,460 by 790 pixels). So the text is 15 pixels, the spacing is tight, and each step on the overview takes two lines: its name and status, then what happened, with the bars lined up like a funnel. How a step decides opens from its "i". The overview went from 3½ screens to 2. 15 pixels is the floor, because smaller text is hard to read over a screen share. The stylesheet link carries the file's change time, so a browser picks up a new layout straight away.
+**Compact on a laptop:** most laptops run Windows at 150 to 175% scaling, so the browser lays the page out on a small canvas (on Lat's laptop, about 1,460 by 790 pixels). So the text is 15 pixels, the spacing is tight, and the overview's steps share one board, with how each step decides behind its "i". The compact pass took the overview from 3½ screens to 2, and the board brings it to about 1⅔. 15 pixels is the floor, because smaller text is hard to read over a screen share. The stylesheet link carries the file's change time, so a browser picks up a new layout straight away.
 
 **Light or dark:** the switch at the top right sets a cookie; light is the default.
 

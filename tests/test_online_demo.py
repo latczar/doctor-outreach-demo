@@ -26,7 +26,7 @@ def test_a_fresh_online_server_starts_from_the_snapshot(settings, services, tmp_
     page = client.get("/").text
     assert "Online prototype with made-up data" in page and 'popovertarget="about-online"' in page
     assert "Laptop copy" not in page
-    assert "19 of 24 doctors fit the campaign" in page
+    assert "<b>19</b> of 24" in page
 
     # Approve one email, so there's a change to undo.
     online_db = connect(online.db_path)
