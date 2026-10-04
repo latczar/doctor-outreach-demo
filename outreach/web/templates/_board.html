@@ -1,5 +1,5 @@
-{# The Overview's board: the workflow left to right, one box a step, kept lean: a count, a dot per doctor (bars for a
-   long list), and an amber line only when a person is needed. The border shows the status, the step where a person is
+{# The Overview's board: the workflow left to right, one box a step, kept lean: a count, a slim bar of the doctors
+   who reached the step, and an amber line only when a person is needed. The border shows the status, the step where a person is
    needed next is marked "Your move", and who stopped where, and why, is one click away. #}
 {% from "_confirm.html" import confirm_button %}
 
@@ -18,9 +18,7 @@
   <h3><span class="sr">Step {{ box.number }}, {{ box.status }}: </span><a class="bd-link" href="{{ box.href }}">{{ box.label }}</a><button type="button" class="info" popovertarget="how-{{ box.key }}" aria-label="How this step decides">i</button></h3>
   {% if not b.empty %}
     <p class="bd-count"><b>{{ box.count }}</b> {{ box.detail }}</p>
-    {% if b.mode == "dots" %}
-      <p class="bd-dots" aria-hidden="true">{% for state, n, share in box.parts %}{% for _ in range(n) %}<i class="{{ state }}"></i>{% endfor %}{% endfor %}</p>
-    {% elif box.parts %}
+    {% if box.parts %}
       <p class="bd-bar" aria-hidden="true">{% for state, n, share in box.parts %}<i class="{{ state }}" style="width: {{ share }}%"></i>{% endfor %}</p>
     {% endif %}
     {% if box.outcomes %}<p class="bd-out">{% for tone, text in box.outcomes %}<span class="tag {{ tone }}">{{ text }}</span>{% endfor %}</p>{% endif %}
@@ -52,9 +50,9 @@
     </div>
   </div>
   {% if b.empty %}
-    <p class="bd-key muted small">Nothing has run yet. Click <strong>Run the pipeline</strong> and each step fills in, with a dot for every doctor.</p>
+    <p class="bd-key muted small">Nothing has run yet. Click <strong>Run the pipeline</strong> and each step fills in.</p>
   {% else %}
-    <p class="bd-key muted small {{ b.mode }}" aria-hidden="true">{{ 'Each dot is a doctor:' if b.mode == 'dots' else 'Each bar is the doctors who reached the step:' }}
+    <p class="bd-key muted small" aria-hidden="true">Each bar is the doctors who reached the step:
       <i class="done"></i> passed <i class="waiting"></i> waiting <i class="person"></i> needs you <i class="stopped"></i> stopped here.
       An amber border needs a person. Click a step to see who stopped there, and why.</p>
     <div class="callout">

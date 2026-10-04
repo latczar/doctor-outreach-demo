@@ -189,8 +189,8 @@ label { font-weight: 600; font-size: 0.9rem; }
 .alerts li { padding: 6px 0; border-top: 1px solid var(--line); }
 .alerts li:first-child { border-top: 0; }
 
-/* Overview: the workflow board. A box a step, in order, on a dotted ground like a map. Each doctor is a dot
-   (the same dots as the Doctors page), or a slice of a bar for a long list. How a step decides sits behind its "i". */
+/* Overview: the workflow board. A box a step, in order, on a dotted ground like a map, each with a slim bar of the
+   doctors who reached it. How a step decides sits behind its "i". */
 .bd-story { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 .board { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr); gap: 12px; margin-top: 8px; }
 .zone { padding: 10px 10px 12px; border-radius: 12px; background-color: var(--bg);
@@ -211,18 +211,12 @@ label { font-weight: 600; font-size: 0.9rem; }
 .bd-box .info, .bd-button { position: relative; z-index: 1; }
 .bd-count { margin: 0; color: var(--muted); font-size: 0.78rem; }
 .bd-count b { margin-right: 2px; color: var(--text); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
-.bd-dots { display: flex; flex-wrap: wrap; gap: 3px; margin: 2px 0; }
-.bd-dots i, .bd-key i { box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--line-strong); }
-.bd-key i { display: inline-block; margin: 0 1px 0 4px; }
-.bd-dots i.done, .bd-key i.done { background: var(--good); border-color: var(--good); }
-.bd-dots i.waiting, .bd-key i.waiting { border-color: var(--waiting); border-width: 3px; }
-.bd-dots i.person, .bd-key i.person { background: var(--warn-strong); border-color: var(--warn-strong); }
-.bd-dots i.stopped, .bd-key i.stopped { background: var(--text-2); border-color: var(--text-2); border-radius: 2px; }
 .bd-bar { display: flex; height: 8px; margin: 4px 0; border-radius: 999px; overflow: hidden; background: var(--muted-soft); }
-.bd-bar i.done { background: var(--good); }
-.bd-bar i.waiting { background: var(--waiting); }
-.bd-bar i.person { background: var(--warn-strong); }
-.bd-bar i.stopped { background: var(--text-2); }
+.bd-key i { display: inline-block; width: 8px; height: 8px; margin: 0 1px 0 4px; border-radius: 2px; }
+.bd-bar i.done, .bd-key i.done { background: var(--good); }
+.bd-bar i.waiting, .bd-key i.waiting { background: var(--waiting); }
+.bd-bar i.person, .bd-key i.person { background: var(--warn-strong); }
+.bd-bar i.stopped, .bd-key i.stopped { background: var(--text-2); }
 .bd-out { display: flex; flex-wrap: wrap; gap: 4px; margin: auto 0 0; }
 .bd-out .tag { font-size: 0.7rem; white-space: normal; }
 .bd-button { margin-top: 6px; padding: 5px 8px; font-size: 0.82rem; text-align: center; }
@@ -235,8 +229,6 @@ label { font-weight: 600; font-size: 0.9rem; }
 .bd-box.later { background: transparent; border-style: dashed; border-color: var(--line-strong); box-shadow: none; }
 .bd-box.later h3 { color: var(--muted); }
 .bd-key { margin: 10px 0 0; }
-.bd-key.bars i { border-radius: 2px; }
-.bd-key.bars i.waiting { background: var(--waiting); }
 .board-card .callout { margin-top: 10px; }
 .callout { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; padding: 10px 14px; background: var(--good-soft); border-left: 6px solid var(--good); border-radius: 0 6px 6px 0; }
 .callout p { margin: 2px 0 0; }

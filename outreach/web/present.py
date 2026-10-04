@@ -98,8 +98,6 @@ def step_status(step: dict) -> tuple[str, str]:
 
 # --- the Overview's board: the workflow left to right, a box a step ----------------
 
-DOTS_UP_TO = 40  # one dot per doctor up to this many rows; a longer list shows bars, as dots stop being countable
-
 # The board's boxes are small, so they use the short status words: "3 bad emails", "1 opted out".
 BOARD_WORDS = {
     Status.NEW: ("not checked yet", "not checked yet"),
@@ -159,7 +157,7 @@ def _box(number: int, key: str, href: str, label: str, how: str, count: int, of:
     return {
         "number": number, "key": key, "href": href, "label": label, "how": how, "count": count, "of": of,
         "detail": detail, "status": status[0], "tone": status[1], "later": status[0] == "Not yet",
-        # (state, how many, share of the doctors who reached this step): a dot each, or a slice of the bar
+        # (state, how many, share of the doctors who reached this step): a slice of the step's bar
         "parts": [(state, n, round(100 * n / of, 1) if of else 0) for state, n in parts if n],
         "outcomes": outcomes,
     }
@@ -168,8 +166,8 @@ def _box(number: int, key: str, href: str, label: str, how: str, count: int, of:
 def board(view: dict) -> dict:
     """The Overview's board, from funnel(): who got through each step, who is waiting or stopped there, and why.
 
-    The research list is the first box. Each doctor is a dot while the list is short enough to count,
-    and the step where a person is needed next is marked, in the to-do list's order.
+    The research list is the first box. Each box has a bar of the doctors who reached it, and the step where a
+    person is needed next is marked, in the to-do list's order.
     """
     rows, unique, merged = view["rows"], view["unique"], view["duplicates"]
     move = your_move(view) if rows else None
@@ -212,8 +210,7 @@ def board(view: dict) -> dict:
              (Status.SEND_FAILED, steps["send"]["stopped"])]
     emails = [board_words(code, group[code]) for code, group in where if group.get(code)]
     emails.append(board_words(Status.SENT, count["send"]) if count["send"] else "none sent yet")
-    return {"rules": boxes[:5], "people": boxes[5:], "empty": not rows, "move": move,
-            "mode": "dots" if rows <= DOTS_UP_TO else "bars", "final_list": view["final_list"],
+    return {"rules": boxes[:5], "people": boxes[5:], "empty": not rows, "move": move, "final_list": view["final_list"],
             "story": story, "emails": "Their emails: " + ", ".join(emails) + "."}
 
 

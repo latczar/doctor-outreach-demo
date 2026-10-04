@@ -155,10 +155,10 @@ def client(settings, conn, services):
 def test_overview_shows_the_to_do_list_and_the_workflow_board(client):
     page = client.get("/").text
     assert "Review 10 emails" in page and "What needs you" in page
-    # The board: the research list and the eight steps, one box each, with a dot for every doctor.
+    # The board: the research list and the eight steps, one box each, with a bar of the doctors who reached it.
     assert page.count('<li class="bd-box') == 9
     assert "<b>24</b> of 27" in page and "<b>19</b> of 24" in page and "<b>10</b> of 11" in page
-    assert page.count('<i class="done"></i>') > 24 and 'class="bd-bar"' not in page
+    assert page.count('class="bd-bar"') == 7 and 'class="bd-dots"' not in page  # Send and Log have no one yet
     assert "So far, 10 passed first time and 0 on a retry." in page  # in that step's "i"
     # The step that needs a person next is marked, with the same job as the top of the to-do list.
     assert page.count('<span class="bd-move">Your move</span>') == 1
@@ -183,7 +183,7 @@ def test_every_doctor_who_reaches_a_step_is_a_dot_in_its_box(conn, services):
     assert all(sum(n for _, n, _ in box["parts"]) == box["of"] for box in boxes)
     # Only jobs show on a box: "1 needs you" does, "3 bad emails" is one click away.
     assert boxes[3]["outcomes"] == [("warn", "1 needs you")] and boxes[4]["outcomes"] == []
-    assert (b["mode"], b["empty"], b["move"]["label"]) == ("dots", False, "Review 10 emails")
+    assert (b["empty"], b["move"]["label"]) == (False, "Review 10 emails")
     # The Your move box leaves its job to the button, rather than also saying "10 waiting for you".
     assert boxes[6]["move"] and boxes[6]["outcomes"] == []
 
@@ -207,7 +207,7 @@ def test_your_move_follows_the_to_do_list_order():
     assert your_move(_view()) is None
 
 
-def test_a_long_list_shows_bars_instead_of_dots(settings, conn, services, tmp_path):
+def test_a_long_list_reads_the_same_on_the_board(settings, conn, services, tmp_path):
     names = [(first, last) for first in ("Alex", "Bea", "Cal", "Dee", "Eli", "Fay", "Gus", "Hal", "Ivy")
              for last in ("Archer", "Baker", "Carter", "Dawson", "Ellis")]  # 45 made-up doctors
     rows = [f"Dr,{first} {last},Consultant,Cardiology,Northbridge University Hospitals NHS Foundation Trust,"
@@ -217,8 +217,8 @@ def test_a_long_list_shows_bars_instead_of_dots(settings, conn, services, tmp_pa
     research.write_text("\n".join([",".join(FIELDS), *rows]) + "\n", encoding="utf-8")
     run_pipeline(conn, services, research)
     page = TestClient(create_app(replace(settings), llm=TemplateLLM())).get("/").text
-    assert 'class="bd-bar"' in page and 'class="bd-dots"' not in page
-    assert "<b>45</b> of 45" in page and "Each bar is the doctors who reached the step" in page
+    assert 'class="bd-bar"' in page and "<b>45</b> of 45" in page
+    assert "Each bar is the doctors who reached the step" in page
 
 
 def test_before_the_first_run_the_board_shows_every_step_empty(settings, conn):
