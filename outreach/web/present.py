@@ -120,9 +120,8 @@ BOARD_WORDS = {
     Status.SENT: ("sent", "sent"),
 }
 
-# What follows a box's big number: "19 of 24", "9 of 11 passed"; the second form is for when none have arrived.
-BOARD_COUNT = {"draft": ("of {of} passed", "passed"), "approval": ("of {of} approved", "approved"),
-               "send": ("of {of} sent", "sent"), "log": ("logged", "logged")}
+# What follows a box's big number: "19 of 24"; the second form is for when none have arrived.
+BOARD_COUNT = {"send": ("of {of}", "sent"), "log": ("logged", "logged")}
 
 
 def board_words(status: str, n: int) -> str:
@@ -176,16 +175,15 @@ def board(view: dict) -> dict:
     move = your_move(view) if rows else None
     boxes = [_box(
         1, "intake", f"/doctors?step={INTAKE['key']}", INTAKE["label"], INTAKE["how"], unique, rows,
-        f"doctor{'' if unique == 1 else 's'}, from {rows} row{'' if rows == 1 else 's'}",
-        ("Done", "good") if rows else ("Not yet", "muted"),
-        [("done", unique), ("stopped", merged)],
-        [("muted", board_words(Status.DUPLICATE, merged))] if merged else [],
+        f"of {rows}", ("Done", "good") if rows else ("Not yet", "muted"),
+        [("done", unique), ("stopped", merged)], [],
     )]
     for number, step in enumerate(view["steps"], start=2):
         person = {code: n for code, n in step["stopped"].items() if code in NEEDS_PERSON}
         stopped = {code: n for code, n in step["stopped"].items() if code not in NEEDS_PERSON}
         here = move if move and move["key"] == step["key"] else None
-        shown = [(tone, code, n) for tone, group in (("waiting", step["waiting"]), ("warn", person), ("muted", stopped))
+        # Only jobs and work in progress show on the box; who stopped, and why, is one click away.
+        shown = [(tone, code, n) for tone, group in (("waiting", step["waiting"]), ("warn", person))
                  for code, n in group.items() if not (here and code in here["codes"])]
         with_of, without = BOARD_COUNT.get(step["key"], ("of {of}", ""))
         box = _box(
@@ -197,7 +195,7 @@ def board(view: dict) -> dict:
         )
         box["move"] = here
         if step.get("first_time") or step.get("retried"):
-            box["tries"] = f"{step['first_time']} first time, {step['retried']} on a retry"
+            box["tries"] = f"So far, {step['first_time']} passed first time and {step['retried']} on a retry."
         boxes.append(box)
     boxes[0]["move"] = None
 

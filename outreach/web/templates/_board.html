@@ -1,23 +1,23 @@
-{# The Overview's board: the workflow left to right, one box a step. Each doctor is a dot (bars for a long list),
-   the reasons show who stopped and why, and the step where a person is needed next is marked "Your move". #}
+{# The Overview's board: the workflow left to right, one box a step, kept lean: a count, a dot per doctor (bars for a
+   long list), and an amber line only when a person is needed. The border shows the status, the step where a person is
+   needed next is marked "Your move", and who stopped where, and why, is one click away. #}
 {% from "_confirm.html" import confirm_button %}
 
-{% macro how_box(key, label, how) %}
+{% macro how_box(key, label, how, extra="") %}
 <div class="info-pop" id="how-{{ key }}" popover>
   <p><strong>{{ label }}</strong></p>
   <p>{{ how | explain }}</p>
+  {% if extra %}<p>{{ extra }}</p>{% endif %}
   <button type="button" popovertarget="how-{{ key }}" popovertargetaction="hide">Close</button>
 </div>
 {% endmacro %}
 
 {% macro board_box(box, b) %}
-<li class="bd-box{{ ' move' if box.move }}{{ ' later' if box.later }}">
+<li class="bd-box {{ box.tone }}{{ ' move' if box.move }}{{ ' later' if box.later }}">
   {% if box.move %}<span class="bd-move">Your move</span>{% endif %}
-  <p class="bd-tag"><span class="tag {{ box.tone }}">{{ box.status }}</span></p>
-  <h3><span class="bd-num" aria-hidden="true">{{ box.number }}</span><a class="bd-link" href="{{ box.href }}">{{ box.label }}</a><button type="button" class="info" popovertarget="how-{{ box.key }}" aria-label="How this step decides">i</button></h3>
+  <h3><span class="sr">Step {{ box.number }}, {{ box.status }}: </span><a class="bd-link" href="{{ box.href }}">{{ box.label }}</a><button type="button" class="info" popovertarget="how-{{ box.key }}" aria-label="How this step decides">i</button></h3>
   {% if not b.empty %}
     <p class="bd-count"><b>{{ box.count }}</b> {{ box.detail }}</p>
-    {% if box.tries %}<p class="bd-tries">{{ box.tries }}</p>{% endif %}
     {% if b.mode == "dots" %}
       <p class="bd-dots" aria-hidden="true">{% for state, n, share in box.parts %}{% for _ in range(n) %}<i class="{{ state }}"></i>{% endfor %}{% endfor %}</p>
     {% elif box.parts %}
@@ -33,7 +33,7 @@
       <a class="button primary bd-button" href="{{ box.move.href }}">{{ box.move.label }}</a>
     {% endif %}
   {% endif %}
-  {{ how_box(box.key, box.label, box.how) }}
+  {{ how_box(box.key, box.label, box.how, box.tries) }}
 </li>
 {% endmacro %}
 
@@ -56,7 +56,7 @@
   {% else %}
     <p class="bd-key muted small {{ b.mode }}" aria-hidden="true">{{ 'Each dot is a doctor:' if b.mode == 'dots' else 'Each bar is the doctors who reached the step:' }}
       <i class="done"></i> passed <i class="waiting"></i> waiting <i class="person"></i> needs you <i class="stopped"></i> stopped here.
-      Click a step to see who's there, and why.</p>
+      An amber border needs a person. Click a step to see who stopped there, and why.</p>
     <div class="callout">
       <div>
         <strong>Final list: {{ b.final_list }} doctor{{ 's' if b.final_list != 1 }} passed every rule</strong>

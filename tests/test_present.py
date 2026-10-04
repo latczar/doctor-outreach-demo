@@ -157,9 +157,9 @@ def test_overview_shows_the_to_do_list_and_the_workflow_board(client):
     assert "Review 10 emails" in page and "What needs you" in page
     # The board: the research list and the eight steps, one box each, with a dot for every doctor.
     assert page.count('<li class="bd-box') == 9
-    assert "<b>24</b> doctors, from 27 rows" in page and "<b>19</b> of 24" in page and "<b>10</b> of 11 passed" in page
+    assert "<b>24</b> of 27" in page and "<b>19</b> of 24" in page and "<b>10</b> of 11" in page
     assert page.count('<i class="done"></i>') > 24 and 'class="bd-bar"' not in page
-    assert "10 first time, 0 on a retry" in page
+    assert "So far, 10 passed first time and 0 on a retry." in page  # in that step's "i"
     # The step that needs a person next is marked, with the same job as the top of the to-do list.
     assert page.count('<span class="bd-move">Your move</span>') == 1
     assert '<a class="button primary bd-button" href="/review">Review 10 emails</a>' in page
@@ -181,7 +181,8 @@ def test_every_doctor_who_reaches_a_step_is_a_dot_in_its_box(conn, services):
     boxes = b["rules"] + b["people"]
     assert [box["count"] for box in boxes] == [24, 19, 18, 14, 11, 10, 0, 0, 0]
     assert all(sum(n for _, n, _ in box["parts"]) == box["of"] for box in boxes)
-    assert boxes[3]["outcomes"] == [("warn", "1 needs you"), ("muted", "3 bad emails")]
+    # Only jobs show on a box: "1 needs you" does, "3 bad emails" is one click away.
+    assert boxes[3]["outcomes"] == [("warn", "1 needs you")] and boxes[4]["outcomes"] == []
     assert (b["mode"], b["empty"], b["move"]["label"]) == ("dots", False, "Review 10 emails")
     # The Your move box leaves its job to the button, rather than also saying "10 waiting for you".
     assert boxes[6]["move"] and boxes[6]["outcomes"] == []
@@ -217,12 +218,12 @@ def test_a_long_list_shows_bars_instead_of_dots(settings, conn, services, tmp_pa
     run_pipeline(conn, services, research)
     page = TestClient(create_app(replace(settings), llm=TemplateLLM())).get("/").text
     assert 'class="bd-bar"' in page and 'class="bd-dots"' not in page
-    assert "<b>45</b> doctors, from 45 rows" in page and "Each bar is the doctors who reached the step" in page
+    assert "<b>45</b> of 45" in page and "Each bar is the doctors who reached the step" in page
 
 
 def test_before_the_first_run_the_board_shows_every_step_empty(settings, conn):
     page = TestClient(create_app(replace(settings), llm=TemplateLLM())).get("/").text
-    assert "Start here" in page and page.count('<li class="bd-box later">') == 9
+    assert "Start here" in page and page.count(' later">') == 9
     assert "Nothing has run yet" in page and "Your move" not in page and 'class="bd-count"' not in page
 
 
